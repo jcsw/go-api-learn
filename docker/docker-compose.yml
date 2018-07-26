@@ -1,0 +1,17 @@
+version: '2'
+
+volumes:
+  mongo-storage-go-api-learn:
+
+services:
+  go-api-learn-mongodb:
+    image: mongo:3.7-jessie
+    container_name: "go-api-learn-mongodb"
+    environment:
+      - MONGO_INITDB_ROOT_USERNAME=go-api-learn
+      - MONGO_INITDB_ROOT_PASSWORD=admin
+    volumes:
+      - mongo-storage-go-api-learn:/data/db
+    command: --auth
+    ports:
+      - 27017:27017
