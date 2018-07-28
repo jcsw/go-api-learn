@@ -38,7 +38,7 @@ func main() {
 	router := http.NewServeMux()
 	router.Handle("/", index())
 	router.Handle("/health", health())
-	router.HandleFunc("/customer", application.Customer)
+	router.HandleFunc("/customer", application.CustomerHandle)
 
 	nextRequestID := func() string {
 		return fmt.Sprintf("%d", time.Now().UnixNano())
@@ -143,7 +143,7 @@ func mongodb(mongoSession *mgo.Session) func(http.Handler) http.Handler {
 			mongoSessionCopy := mongoSession.Copy()
 			defer mongoSessionCopy.Close()
 
-			ctx := context.WithValue(r.Context(), "mongoSession", mongoSessionCopy)
+			ctx := context.WithValue(r.Context(), infra.SessionContextKey, mongoSessionCopy)
 			next.ServeHTTP(w, r.WithContext(ctx))
 		})
 	}

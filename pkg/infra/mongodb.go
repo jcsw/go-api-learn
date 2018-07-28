@@ -4,14 +4,20 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/jcsw/go-api-learn/pkg/infra/dao"
 	"gopkg.in/mgo.v2"
+)
+
+const (
+	// SessionContextKey Key to retrieve mongo session on context
+	SessionContextKey = "mongoSession"
 )
 
 const (
 	databaseName = "admin"
 )
 
-// CreateMongoDBSession function to create mongodb session
+// CreateMongoDBSession create a mongodb session
 func CreateMongoDBSession() *mgo.Session {
 
 	const (
@@ -41,6 +47,8 @@ func CreateMongoDBSession() *mgo.Session {
 	session.SetMode(mgo.Monotonic, true)
 
 	fmt.Printf("Connected to %v!\n", session.LiveServers())
+
+	dao.EnsureCustomerIndex(session)
 
 	return session
 }
