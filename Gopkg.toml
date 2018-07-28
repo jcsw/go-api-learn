@@ -7,7 +7,3 @@
 [[constraint]]
   branch = "v2"
   name = "gopkg.in/mgo.v2"
-
-[[constraint]]
-  branch = "master"
-  name = "github.com/golang/glog"
