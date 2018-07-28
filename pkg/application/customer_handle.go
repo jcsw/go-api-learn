@@ -4,10 +4,10 @@ import (
 	"encoding/json"
 	"net/http"
 
+	"gopkg.in/mgo.v2"
+
 	"github.com/jcsw/go-api-learn/pkg/domain"
 	"github.com/jcsw/go-api-learn/pkg/infra"
-	"github.com/jcsw/go-api-learn/pkg/infra/dao"
-	mgo "gopkg.in/mgo.v2"
 )
 
 // CustomerHandle function to handle "/customer"
@@ -34,7 +34,7 @@ func listCustomers(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	customers, err := dao.FindAllCustomers(db)
+	customers, err := infra.FindAllCustomers(db)
 	if err != nil {
 		respondWithError(w, http.StatusInternalServerError, err.Error())
 		return
@@ -63,7 +63,7 @@ func addCustomer(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err := dao.InsertCustomer(db, newCustomer); err != nil {
+	if err := infra.InsertCustomer(db, newCustomer); err != nil {
 		respondWithError(w, http.StatusInternalServerError, err.Error())
 		return
 	}

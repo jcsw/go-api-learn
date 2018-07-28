@@ -1,19 +1,15 @@
 package infra
 
 import (
-	"fmt"
 	"time"
 
-	"github.com/jcsw/go-api-learn/pkg/infra/dao"
 	"gopkg.in/mgo.v2"
 )
 
 const (
 	// SessionContextKey Key to retrieve mongo session on context
 	SessionContextKey = "mongoSession"
-)
 
-const (
 	databaseName = "admin"
 )
 
@@ -41,14 +37,14 @@ func CreateMongoDBSession() *mgo.Session {
 	})
 
 	if err != nil {
-		panic(err)
+		logger.Fatal(err)
 	}
 
 	session.SetMode(mgo.Monotonic, true)
 
-	fmt.Printf("Connected to %v!\n", session.LiveServers())
+	logger.Println("Mongodb session connected to", session.LiveServers())
 
-	dao.EnsureCustomerIndex(session)
+	EnsureCustomerIndex(session)
 
 	return session
 }

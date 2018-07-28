@@ -28,11 +28,12 @@ var (
 	healthy    int32
 )
 
+var logger = infra.GetLogger()
+
 func main() {
 	flag.StringVar(&listenAddr, "listen-addr", ":8080", "server listen address")
 	flag.Parse()
 
-	logger := log.New(os.Stdout, "go-api-learn ", log.LstdFlags)
 	logger.Println("Server is starting...")
 
 	router := http.NewServeMux()

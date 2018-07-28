@@ -1,16 +1,13 @@
-package dao
+package infra
 
 import (
-	"fmt"
-
-	mgo "gopkg.in/mgo.v2"
+	"gopkg.in/mgo.v2"
 	"gopkg.in/mgo.v2/bson"
 
 	"github.com/jcsw/go-api-learn/pkg/domain"
 )
 
 const (
-	databaseName   = "admin"
 	collectionName = "customer"
 )
 
@@ -22,7 +19,7 @@ type customerEntity struct {
 
 // EnsureCustomerIndex function to create index on customer collection
 func EnsureCustomerIndex(mongoSession *mgo.Session) {
-	defer fmt.Printf("Create the index on customer collection")
+	defer logger.Println("Create the index on customer collection")
 
 	session := mongoSession.Copy()
 	defer session.Close()
