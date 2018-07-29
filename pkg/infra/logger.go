@@ -5,9 +5,13 @@ import (
 	"os"
 )
 
-var logger = GetLogger()
+var logger = GetConfiguredLogger()
 
-// GetLogger Return log
-func GetLogger() *log.Logger {
+// GetConfiguredLogger - Return a configured logger
+func GetConfiguredLogger() *log.Logger {
 	return log.New(os.Stdout, "go-api-learn ", log.LstdFlags)
+}
+
+func LogInfo(v ...interface{}) {
+	logger.Println("INFO", (v))
 }

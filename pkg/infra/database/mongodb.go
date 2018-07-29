@@ -1,8 +1,9 @@
-package infra
+package database
 
 import (
 	"time"
 
+	"github.com/jcsw/go-api-learn/pkg/infra"
 	"gopkg.in/mgo.v2"
 )
 
@@ -12,6 +13,8 @@ const (
 
 	databaseName = "admin"
 )
+
+var logger = infra.GetConfiguredLogger()
 
 // CreateMongoDBSession create a mongodb session
 func CreateMongoDBSession() *mgo.Session {
@@ -42,7 +45,7 @@ func CreateMongoDBSession() *mgo.Session {
 
 	session.SetMode(mgo.Monotonic, true)
 
-	logger.Println("Mongodb session connected to", session.LiveServers())
+	infra.LogInfo("Mongodb session connected to", session.LiveServers())
 
 	EnsureCustomerIndex(session)
 

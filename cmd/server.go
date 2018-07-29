@@ -15,6 +15,7 @@ import (
 
 	"github.com/jcsw/go-api-learn/pkg/application"
 	"github.com/jcsw/go-api-learn/pkg/infra"
+	"github.com/jcsw/go-api-learn/pkg/infra/database"
 )
 
 type key int
@@ -28,9 +29,11 @@ var (
 	healthy    int32
 )
 
-var logger = infra.GetLogger()
+var logger = infra.GetConfiguredLogger()
 
 func main() {
+	startDate := time.Now()
+
 	flag.StringVar(&listenAddr, "listen-addr", ":8080", "server listen address")
 	flag.Parse()
 
@@ -45,7 +48,7 @@ func main() {
 		return fmt.Sprintf("%d", time.Now().UnixNano())
 	}
 
-	mongoSession := infra.CreateMongoDBSession()
+	mongoSession := database.CreateMongoDBSession()
 	defer mongoSession.Close()
 
 	server := &http.Server{
@@ -76,7 +79,7 @@ func main() {
 		close(done)
 	}()
 
-	logger.Println("Server is ready to handle requests at", listenAddr)
+	logger.Println("Server is ready to handle requests at", listenAddr, "elapsed time to start was", time.Since(startDate))
 	atomic.StoreInt32(&healthy, 1)
 	if err := server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
 		logger.Fatalf("Could not listen on %s: %v\n", listenAddr, err)
@@ -144,7 +147,7 @@ func mongodb(mongoSession *mgo.Session) func(http.Handler) http.Handler {
 			mongoSessionCopy := mongoSession.Copy()
 			defer mongoSessionCopy.Close()
 
-			ctx := context.WithValue(r.Context(), infra.SessionContextKey, mongoSessionCopy)
+			ctx := context.WithValue(r.Context(), database.SessionContextKey, mongoSessionCopy)
 			next.ServeHTTP(w, r.WithContext(ctx))
 		})
 	}

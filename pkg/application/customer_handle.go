@@ -7,7 +7,7 @@ import (
 	"gopkg.in/mgo.v2"
 
 	"github.com/jcsw/go-api-learn/pkg/domain"
-	"github.com/jcsw/go-api-learn/pkg/infra"
+	"github.com/jcsw/go-api-learn/pkg/infra/database"
 )
 
 // CustomerHandle function to handle "/customer"
@@ -28,13 +28,13 @@ func CustomerHandle(w http.ResponseWriter, r *http.Request) {
 
 func listCustomers(w http.ResponseWriter, r *http.Request) {
 
-	db, ok := r.Context().Value(infra.SessionContextKey).(*mgo.Session)
+	db, ok := r.Context().Value(database.SessionContextKey).(*mgo.Session)
 	if !ok {
 		respondWithError(w, http.StatusInternalServerError, "InternalServerError")
 		return
 	}
 
-	customers, err := infra.FindAllCustomers(db)
+	customers, err := database.FindAllCustomers(db)
 	if err != nil {
 		respondWithError(w, http.StatusInternalServerError, err.Error())
 		return
@@ -57,13 +57,13 @@ func addCustomer(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	db, ok := r.Context().Value(infra.SessionContextKey).(*mgo.Session)
+	db, ok := r.Context().Value(database.SessionContextKey).(*mgo.Session)
 	if !ok {
 		respondWithError(w, http.StatusInternalServerError, "InternalServerError")
 		return
 	}
 
-	if err := infra.InsertCustomer(db, newCustomer); err != nil {
+	if err := database.InsertCustomer(db, newCustomer); err != nil {
 		respondWithError(w, http.StatusInternalServerError, err.Error())
 		return
 	}
