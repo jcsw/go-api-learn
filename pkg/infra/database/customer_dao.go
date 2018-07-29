@@ -5,6 +5,7 @@ import (
 	"gopkg.in/mgo.v2/bson"
 
 	"github.com/jcsw/go-api-learn/pkg/domain"
+	"github.com/jcsw/go-api-learn/pkg/infra/logger"
 )
 
 const (
@@ -19,7 +20,7 @@ type customerEntity struct {
 
 // EnsureCustomerIndex function to create index on customer collection
 func EnsureCustomerIndex(mongoSession *mgo.Session) {
-	defer logger.Println("Create the index on customer collection")
+	defer logger.Info("Create the index on customer collection")
 
 	session := mongoSession.Copy()
 	defer session.Close()
