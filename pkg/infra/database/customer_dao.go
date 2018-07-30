@@ -58,10 +58,29 @@ func FindAllCustomers(mongoSession *mgo.Session) ([]domain.Customer, error) {
 	customers := []customerEntity{}
 	err := mongoSession.DB(databaseName).C(collectionName).Find(nil).All(&customers)
 
+	if err != nil {
+		return nil, err
+	}
+
 	result := []domain.Customer{}
 	for _, customer := range customers {
 		result = append(result, domain.Customer{Name: customer.Name, City: customer.City})
 	}
 
 	return result, err
+}
+
+// FindCustomerByName function to find customer by name
+func FindCustomerByName(mongoSession *mgo.Session, name string) (*domain.Customer, error) {
+
+	customer := customerEntity{}
+	err := mongoSession.DB(databaseName).C(collectionName).Find(bson.M{"name": name}).One(&customer)
+
+	if err != nil {
+		return nil, err
+	}
+
+	result := domain.Customer{Name: customer.Name, City: customer.City}
+
+	return &result, err
 }

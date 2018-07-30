@@ -2,6 +2,15 @@
 
 
 [[projects]]
+  name = "github.com/allegro/bigcache"
+  packages = [
+    ".",
+    "queue"
+  ]
+  revision = "f31987a23e44c5121ef8c8b2f2ea2e8ffa37b068"
+  version = "v1.1.0"
+
+[[projects]]
   branch = "v2"
   name = "gopkg.in/mgo.v2"
   packages = [
@@ -16,6 +25,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "f6e466625d21d47bfbaf0ac269619cea8e2f0342460342ef2f67118f40d0e294"
+  inputs-digest = "db7feebef17dc46a1c1d5f22c4c131422c69bf3a14bce87f38bac00d825e9478"
   solver-name = "gps-cdcl"
   solver-version = 1

@@ -19,6 +19,12 @@ func CustomerHandle(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if r.Method == "GET" {
+
+		if _, ok := r.URL.Query()["name"]; ok {
+			getCustomer(w, r)
+			return
+		}
+
 		listCustomers(w, r)
 		return
 	}
@@ -41,6 +47,30 @@ func listCustomers(w http.ResponseWriter, r *http.Request) {
 	}
 
 	respondWithJSON(w, http.StatusOK, customers)
+}
+
+func getCustomer(w http.ResponseWriter, r *http.Request) {
+
+	db, ok := r.Context().Value(database.SessionContextKey).(*mgo.Session)
+	if !ok {
+		respondWithError(w, http.StatusInternalServerError, "InternalServerError")
+		return
+	}
+
+	name, _ := r.URL.Query()["name"]
+
+	customer, err := database.FindCustomerByName(db, name[0])
+	if err != nil {
+		respondWithError(w, http.StatusInternalServerError, err.Error())
+		return
+	}
+
+	if customer == nil {
+		respondWithError(w, http.StatusNotFound, "Customer not found")
+		return
+	}
+
+	respondWithJSON(w, http.StatusOK, customer)
 }
 
 func addCustomer(w http.ResponseWriter, r *http.Request) {
