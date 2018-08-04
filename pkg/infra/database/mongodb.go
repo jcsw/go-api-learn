@@ -3,13 +3,16 @@ package database
 import (
 	"time"
 
+	"github.com/jcsw/go-api-learn/pkg/infra/database/repository"
 	"github.com/jcsw/go-api-learn/pkg/infra/logger"
 	"gopkg.in/mgo.v2"
 )
 
+type key string
+
 const (
 	// SessionContextKey Key to retrieve mongo session on context
-	SessionContextKey = "mongoSession"
+	SessionContextKey key = "mongoSession"
 
 	databaseName = "admin"
 )
@@ -38,13 +41,13 @@ func CreateMongoDBSession() *mgo.Session {
 	})
 
 	if err != nil {
-		logger.Fatal(err)
+		logger.Fatal("Could not create mongodb session, err=%v", err)
 	}
 
 	session.SetMode(mgo.Monotonic, true)
-	defer logger.Info("Mongodb session connected to", session.LiveServers())
+	logger.Info("Created mongodb session with servers %v", session.LiveServers())
 
-	EnsureCustomerIndex(session)
+	repository.EnsureCustomerIndex(session)
 
 	return session
 }

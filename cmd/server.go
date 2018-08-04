@@ -13,6 +13,7 @@ import (
 	"gopkg.in/mgo.v2"
 
 	"github.com/jcsw/go-api-learn/pkg/application"
+	"github.com/jcsw/go-api-learn/pkg/infra/cache"
 	"github.com/jcsw/go-api-learn/pkg/infra/database"
 	"github.com/jcsw/go-api-learn/pkg/infra/logger"
 )
@@ -48,6 +49,8 @@ func main() {
 	mongoSession := database.CreateMongoDBSession()
 	defer mongoSession.Close()
 
+	cache.InitLocalCache()
+
 	server := &http.Server{
 		Addr:         listenAddr,
 		Handler:      tracing(nextRequestID)(logging()(mongodb(mongoSession)(router))),
@@ -75,10 +78,10 @@ func main() {
 		close(done)
 	}()
 
-	logger.Info("Server is ready to handle requests at", listenAddr, "elapsed time to start was", time.Since(startDate))
+	logger.Info("Server is ready to handle requests at %s, elapsed time to start was %v", listenAddr, time.Since(startDate))
 	atomic.StoreInt32(&healthy, 1)
 	if err := server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
-		logger.Fatal("Could not listen on %s: %v\n", listenAddr, err)
+		logger.Fatal("Could not listen on", listenAddr, err)
 	}
 
 	<-done
@@ -117,7 +120,8 @@ func logging() func(http.Handler) http.Handler {
 			if !ok {
 				requestID = "unknown"
 			}
-			logger.Info(requestID, r.Method, r.URL.Path, r.RemoteAddr, time.Since(start))
+			logger.Info("requestID=%s, method=%s path=%s remoteAddr=%s elapsedTime=%v",
+				requestID, r.Method, r.URL.Path, r.RemoteAddr, time.Since(start))
 		})
 	}
 }

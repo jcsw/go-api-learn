@@ -8,6 +8,7 @@ import (
 
 	"github.com/jcsw/go-api-learn/pkg/domain"
 	"github.com/jcsw/go-api-learn/pkg/infra/database"
+	"github.com/jcsw/go-api-learn/pkg/infra/database/repository"
 )
 
 // CustomerHandle function to handle "/customer"
@@ -34,13 +35,14 @@ func CustomerHandle(w http.ResponseWriter, r *http.Request) {
 
 func listCustomers(w http.ResponseWriter, r *http.Request) {
 
-	db, ok := r.Context().Value(database.SessionContextKey).(*mgo.Session)
+	mongoSession, ok := r.Context().Value(database.SessionContextKey).(*mgo.Session)
 	if !ok {
 		respondWithError(w, http.StatusInternalServerError, "InternalServerError")
 		return
 	}
 
-	customers, err := database.FindAllCustomers(db)
+	customerRepository := repository.CustomerRepository{MongoSession: mongoSession}
+	customers, err := domain.Customers(&customerRepository)
 	if err != nil {
 		respondWithError(w, http.StatusInternalServerError, err.Error())
 		return
@@ -51,7 +53,7 @@ func listCustomers(w http.ResponseWriter, r *http.Request) {
 
 func getCustomer(w http.ResponseWriter, r *http.Request) {
 
-	db, ok := r.Context().Value(database.SessionContextKey).(*mgo.Session)
+	mongoSession, ok := r.Context().Value(database.SessionContextKey).(*mgo.Session)
 	if !ok {
 		respondWithError(w, http.StatusInternalServerError, "InternalServerError")
 		return
@@ -59,7 +61,8 @@ func getCustomer(w http.ResponseWriter, r *http.Request) {
 
 	name, _ := r.URL.Query()["name"]
 
-	customer, err := database.FindCustomerByName(db, name[0])
+	customerRepository := repository.CustomerRepository{MongoSession: mongoSession}
+	customer, err := domain.CustomerByName(&customerRepository, name[0])
 	if err != nil {
 		respondWithError(w, http.StatusInternalServerError, err.Error())
 		return
@@ -82,21 +85,18 @@ func addCustomer(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err := domain.ValidateNewCustomer(newCustomer); err != nil {
-		respondWithError(w, http.StatusInternalServerError, err.Error())
-		return
-	}
-
-	db, ok := r.Context().Value(database.SessionContextKey).(*mgo.Session)
+	mongoSession, ok := r.Context().Value(database.SessionContextKey).(*mgo.Session)
 	if !ok {
 		respondWithError(w, http.StatusInternalServerError, "InternalServerError")
 		return
 	}
 
-	if err := database.InsertCustomer(db, newCustomer); err != nil {
+	customerRepository := repository.CustomerRepository{MongoSession: mongoSession}
+	createdCustomer, err := domain.CreateCustomer(&customerRepository, &newCustomer)
+	if err != nil {
 		respondWithError(w, http.StatusInternalServerError, err.Error())
 		return
 	}
 
-	respondWithCode(w, http.StatusOK)
+	respondWithJSON(w, http.StatusOK, createdCustomer)
 }

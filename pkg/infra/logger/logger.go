@@ -12,26 +12,26 @@ func configureLogger() *log.Logger {
 }
 
 // Debug - Logging in level DEBUG
-func Debug(v ...interface{}) {
-	logger.Println("DEBUG", (v))
+func Debug(log string, v ...interface{}) {
+	logger.Printf("DEBUG"+log, v...)
 }
 
 // Info - Logging in level INFO
-func Info(v ...interface{}) {
-	logger.Println("INFO", (v))
+func Info(log string, v ...interface{}) {
+	logger.Printf("INFO "+log, v...)
 }
 
 // Warn - Logging in level WARN
-func Warn(v ...interface{}) {
-	logger.Println("WARN", (v))
+func Warn(log string, v ...interface{}) {
+	logger.Printf("WARN"+log, v...)
 }
 
 // Error - Logging in level ERROR
-func Error(v ...interface{}) {
-	logger.Println("ERROR", (v))
+func Error(log string, v ...interface{}) {
+	logger.Printf("ERROR"+log, v...)
 }
 
 // Fatal - Logging in level FATAL
-func Fatal(v ...interface{}) {
-	logger.Fatalln("FATAL", (v))
+func Fatal(log string, v ...interface{}) {
+	logger.Fatalf("FATAL"+log, v...)
 }

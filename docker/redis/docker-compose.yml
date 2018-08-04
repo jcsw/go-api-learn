@@ -1,0 +1,8 @@
+version: '2'
+
+services:
+  go-api-learn-redis:
+    image: redis:4-stretch
+    container_name: "go-api-learn-redis"
+    ports:
+      - 6379:6379
