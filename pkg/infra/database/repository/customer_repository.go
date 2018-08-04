@@ -19,9 +19,16 @@ type CustomerEntity struct {
 	City string        `bson:"city"`
 }
 
-// CustomerRepository define the data customer repository
-type CustomerRepository struct {
+// Repository define the data repository
+type Repository struct {
 	MongoSession *mgo.Session
+}
+
+// CustomerRepository define the data customer repository
+type CustomerRepository interface {
+	InsertCustomer(newCustomerEntity *CustomerEntity) error
+	FindCustomerByName(name string) (*CustomerEntity, error)
+	FindAllCustomers() ([]CustomerEntity, error)
 }
 
 // EnsureCustomerIndex create index on customer collection
@@ -45,18 +52,19 @@ func EnsureCustomerIndex(mongoSession *mgo.Session) {
 	}
 }
 
-func (repository *CustomerRepository) customerCollection() *mgo.Collection {
+func (repository *Repository) customerCollection() *mgo.Collection {
 	return repository.MongoSession.DB(databaseName).C(collectionName)
 }
 
 // InsertCustomer function to persist customer
-func (repository *CustomerRepository) InsertCustomer(newCustomerEntity *CustomerEntity) error {
+func (repository Repository) InsertCustomer(newCustomerEntity *CustomerEntity) error {
+	newCustomerEntity.ID = bson.NewObjectId()
 	err := repository.customerCollection().Insert(&newCustomerEntity)
 	return err
 }
 
 // FindAllCustomers function to find all customers
-func (repository *CustomerRepository) FindAllCustomers() ([]CustomerEntity, error) {
+func (repository Repository) FindAllCustomers() ([]CustomerEntity, error) {
 
 	customers := []CustomerEntity{}
 	err := repository.customerCollection().Find(nil).All(&customers)
@@ -69,7 +77,7 @@ func (repository *CustomerRepository) FindAllCustomers() ([]CustomerEntity, erro
 }
 
 // FindCustomerByName function to find customer by name
-func (repository *CustomerRepository) FindCustomerByName(name string) (*CustomerEntity, error) {
+func (repository Repository) FindCustomerByName(name string) (*CustomerEntity, error) {
 
 	customer := CustomerEntity{}
 	err := repository.customerCollection().Find(bson.M{"name": name}).One(&customer)
