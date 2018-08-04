@@ -23,15 +23,15 @@ func Info(log string, v ...interface{}) {
 
 // Warn - Logging in level WARN
 func Warn(log string, v ...interface{}) {
-	logger.Printf("WARN"+log, v...)
+	logger.Printf("WARN "+log, v...)
 }
 
 // Error - Logging in level ERROR
 func Error(log string, v ...interface{}) {
-	logger.Printf("ERROR"+log, v...)
+	logger.Printf("ERROR "+log, v...)
 }
 
 // Fatal - Logging in level FATAL
 func Fatal(log string, v ...interface{}) {
-	logger.Fatalf("FATAL"+log, v...)
+	logger.Fatalf("FATAL "+log, v...)
 }

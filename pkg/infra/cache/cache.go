@@ -13,7 +13,7 @@ func configureBigCache() *bigcache.BigCache {
 	bigcache, initErr := bigcache.NewBigCache(bigcache.DefaultConfig(10 * time.Minute))
 
 	if initErr != nil {
-		logger.Fatal("Could not create BigCache session", initErr)
+		logger.Error("Could not create BigCache session", initErr)
 	}
 
 	logger.Info("BigCache session stats: collisions=%v delHits=%v delMisses=%v hits=%v misses=%v",
