@@ -40,7 +40,7 @@ func CreateCustomer(customerRepository repository.CustomerRepository, newCustome
 	}
 
 	if err := customerRepository.InsertCustomer(newCustomerEntity); err != nil {
-		return nil, err
+		return nil, errors.New("Could not complete customer registration.\n" + err.Error())
 	}
 
 	return &Customer{ID: newCustomerEntity.ID.Hex(), Name: newCustomerEntity.Name, City: newCustomerEntity.City}, nil
@@ -51,11 +51,7 @@ func Customers(customerRepository repository.CustomerRepository) ([]Customer, er
 
 	customersEntity, err := customerRepository.FindAllCustomers()
 	if err != nil {
-		return nil, err
-	}
-
-	if customersEntity == nil {
-		return nil, nil
+		return nil, errors.New("Could not find customers.\n" + err.Error())
 	}
 
 	customers := []Customer{}
@@ -71,7 +67,7 @@ func CustomerByName(customerRepository repository.CustomerRepository, name strin
 
 	customerEntity, err := customerRepository.FindCustomerByName(name)
 	if err != nil {
-		return nil, err
+		return nil, errors.New("Could not find customer.\n" + err.Error())
 	}
 
 	if customerEntity == nil {
