@@ -1,6 +1,7 @@
 package cache
 
 import (
+	"fmt"
 	"time"
 
 	"github.com/allegro/bigcache"
@@ -29,11 +30,13 @@ func configureBigCache() *bigcache.BigCache {
 // InitLocalCache - Initialize the local cache
 func InitLocalCache() {
 
-	PutInLocalCache("init", []byte("init"))
-	pull := PullInLocalCache("init")
+	initValue := fmt.Sprintf("init-%v", time.Now().Unix())
+
+	PutInLocalCache(initValue, []byte(initValue))
+	pull := PullInLocalCache(initValue)
 
 	if pull == nil {
-		logger.Error("Failed to pull in local cache")
+		logger.Error("Failed init local cache")
 	}
 }
 
