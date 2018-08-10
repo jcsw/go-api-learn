@@ -4,8 +4,6 @@ import (
 	"encoding/json"
 	"net/http"
 
-	"gopkg.in/mgo.v2"
-
 	"github.com/jcsw/go-api-learn/pkg/domain"
 	"github.com/jcsw/go-api-learn/pkg/infra/database"
 	"github.com/jcsw/go-api-learn/pkg/infra/database/repository"
@@ -35,11 +33,12 @@ func CustomerHandle(w http.ResponseWriter, r *http.Request) {
 
 func listCustomers(w http.ResponseWriter, r *http.Request) {
 
-	mongoSession, ok := r.Context().Value(database.SessionContextKey).(*mgo.Session)
-	if !ok {
+	mongoSession := database.RetrieveMongoSession()
+	if mongoSession != nil {
 		respondWithError(w, http.StatusInternalServerError, "InternalServerError")
 		return
 	}
+	defer mongoSession.Close()
 
 	customerRepository := repository.Repository{MongoSession: mongoSession}
 	customers, err := domain.Customers(&customerRepository)
@@ -53,11 +52,12 @@ func listCustomers(w http.ResponseWriter, r *http.Request) {
 
 func getCustomer(w http.ResponseWriter, r *http.Request) {
 
-	mongoSession, ok := r.Context().Value(database.SessionContextKey).(*mgo.Session)
-	if !ok {
+	mongoSession := database.RetrieveMongoSession()
+	if mongoSession != nil {
 		respondWithError(w, http.StatusInternalServerError, "InternalServerError")
 		return
 	}
+	defer mongoSession.Close()
 
 	name, _ := r.URL.Query()["name"]
 
@@ -85,11 +85,12 @@ func addCustomer(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	mongoSession, ok := r.Context().Value(database.SessionContextKey).(*mgo.Session)
-	if !ok {
+	mongoSession := database.RetrieveMongoSession()
+	if mongoSession != nil {
 		respondWithError(w, http.StatusInternalServerError, "InternalServerError")
 		return
 	}
+	defer mongoSession.Close()
 
 	customerRepository := repository.Repository{MongoSession: mongoSession}
 	createdCustomer, err := domain.CreateCustomer(&customerRepository, &newCustomer)

@@ -8,17 +8,35 @@ import (
 	"gopkg.in/mgo.v2"
 )
 
-type key string
-
 const (
-	// SessionContextKey Key to retrieve mongo session on context
-	SessionContextKey key = "mongoSession"
-
 	databaseName = "admin"
 )
 
-// CreateMongoDBSession create a mongodb session
-func CreateMongoDBSession() *mgo.Session {
+var mgoSession *mgo.Session
+
+// RetrieveMongoSession Return a mongodb session
+func RetrieveMongoSession() *mgo.Session {
+	return mgoSession.Clone()
+}
+
+// InitializeMongoDBSession initiliaze a mongodb session
+func InitializeMongoDBSession() {
+	mgoSession = createMongoDBSession()
+	go monitorMongoDBSession()
+}
+
+func monitorMongoDBSession() {
+	for {
+		time.Sleep(3 * time.Second)
+		if mgoSession != nil && mgoSession.Ping() == nil {
+			logger.Info("MongoDB session servers %v", mgoSession.LiveServers())
+		} else {
+			mgoSession = createMongoDBSession()
+		}
+	}
+}
+
+func createMongoDBSession() *mgo.Session {
 
 	const (
 		username  = "go-api-learn"
@@ -41,11 +59,12 @@ func CreateMongoDBSession() *mgo.Session {
 	})
 
 	if err != nil {
-		logger.Fatal("Could not create mongodb session, err=%v", err)
+		logger.Error("Could not create mongodb session, err=%v", err)
+		return nil
 	}
 
 	session.SetMode(mgo.Monotonic, true)
-	logger.Info("Created mongodb session with servers %v", session.LiveServers())
+	logger.Info("MongoBD session created with servers %v", session.LiveServers())
 
 	repository.EnsureCustomerIndex(session)
 

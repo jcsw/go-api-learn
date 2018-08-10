@@ -17,6 +17,7 @@ BINARY_UNIX=$(BINARY_NAME)_unix
 APP_INIT=./cmd/server.go
 
 SRC=$(shell find . -type f -name '*.go' -not -path "./vendor/*")
+PKG= $(shell go list ./... | grep -v /vendor/)
 
 all: clean fmt vet lint test build
 
@@ -26,9 +27,9 @@ test:
 	$(GO_TEST) -v ./... -covermode=count -coverprofile=$(BUILD_DIRECTORY)/cover.out
 	$(GO_COVER) -html=$(BUILD_DIRECTORY)/cover.out -o $(BUILD_DIRECTORY)/coverage.html
 vet:
-	$(GO_VET) -v ./...
+	$(GO_VET) -v -shadow ./...
 lint:
-	$(GO_LINT) $(SRC)
+	$(GO_LINT) $(PKG)
 fmt:
 	$(GO_FMT) -w -d $(SRC)
 clean:

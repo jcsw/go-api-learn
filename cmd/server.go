@@ -10,8 +10,6 @@ import (
 	"sync/atomic"
 	"time"
 
-	"gopkg.in/mgo.v2"
-
 	"github.com/jcsw/go-api-learn/pkg/application"
 	"github.com/jcsw/go-api-learn/pkg/infra/cache"
 	"github.com/jcsw/go-api-learn/pkg/infra/database"
@@ -46,14 +44,12 @@ func main() {
 		return fmt.Sprintf("%d", time.Now().UnixNano())
 	}
 
-	mongoSession := database.CreateMongoDBSession()
-	defer mongoSession.Close()
-
-	cache.InitLocalCache()
+	database.InitializeMongoDBSession()
+	cache.InitializeBigCache()
 
 	server := &http.Server{
 		Addr:         listenAddr,
-		Handler:      tracing(nextRequestID)(logging()(mongodb(mongoSession)(router))),
+		Handler:      tracing(nextRequestID)(logging()(router)),
 		ReadTimeout:  3 * time.Second,
 		WriteTimeout: 5 * time.Second,
 		IdleTimeout:  5 * time.Second,
@@ -136,18 +132,6 @@ func tracing(nextRequestID func() string) func(http.Handler) http.Handler {
 			ctx := context.WithValue(r.Context(), requestIDKey, requestID)
 			w.Header().Set("X-Request-Id", requestID)
 
-			next.ServeHTTP(w, r.WithContext(ctx))
-		})
-	}
-}
-
-func mongodb(mongoSession *mgo.Session) func(http.Handler) http.Handler {
-	return func(next http.Handler) http.Handler {
-		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			mongoSessionCopy := mongoSession.Copy()
-			defer mongoSessionCopy.Close()
-
-			ctx := context.WithValue(r.Context(), database.SessionContextKey, mongoSessionCopy)
 			next.ServeHTTP(w, r.WithContext(ctx))
 		})
 	}

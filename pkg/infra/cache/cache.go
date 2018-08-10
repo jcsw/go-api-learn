@@ -1,14 +1,13 @@
 package cache
 
 import (
-	"fmt"
 	"time"
 
 	"github.com/allegro/bigcache"
 	"github.com/jcsw/go-api-learn/pkg/infra/logger"
 )
 
-var localCache = configureBigCache()
+var bCache *bigcache.BigCache
 
 func configureBigCache() *bigcache.BigCache {
 	bigcache, initErr := bigcache.NewBigCache(bigcache.DefaultConfig(10 * time.Minute))
@@ -17,38 +16,40 @@ func configureBigCache() *bigcache.BigCache {
 		logger.Error("Could not create BigCache session", initErr)
 	}
 
-	logger.Info("BigCache session stats: collisions=%v delHits=%v delMisses=%v hits=%v misses=%v",
-		bigcache.Stats().Collisions,
-		bigcache.Stats().DelHits,
-		bigcache.Stats().DelMisses,
-		bigcache.Stats().Hits,
-		bigcache.Stats().Misses)
-
 	return bigcache
 }
 
-// InitLocalCache - Initialize the local cache
-func InitLocalCache() {
+// InitializeBigCache - Initialize the local cache
+func InitializeBigCache() {
+	bCache = configureBigCache()
+	go monitorBigCache()
+}
 
-	initValue := fmt.Sprintf("init-%v", time.Now().Unix())
-
-	PutInLocalCache(initValue, []byte(initValue))
-	pull := PullInLocalCache(initValue)
-
-	if pull == nil {
-		logger.Error("Failed init local cache")
+func monitorBigCache() {
+	for {
+		time.Sleep(3 * time.Second)
+		if bCache != nil {
+			logger.Info("BigCache stats: collisions=%v delHits=%v delMisses=%v hits=%v misses=%v",
+				bCache.Stats().Collisions,
+				bCache.Stats().DelHits,
+				bCache.Stats().DelMisses,
+				bCache.Stats().Hits,
+				bCache.Stats().Misses)
+		} else {
+			bCache = configureBigCache()
+		}
 	}
 }
 
 // PullInLocalCache - Pull in local cache
 func PullInLocalCache(key string) []byte {
-	value, err := localCache.Get(key)
+	value, err := bCache.Get(key)
 	if err != nil {
 		logger.Error("f=PullInLocalCache key=%s err=%v", key, err)
 		return nil
 	}
 
-	defer logger.Info("f=PullInLocalCache key=%s value=%s", key, value)
+	logger.Info("f=PullInLocalCache key=%s value=%s", key, value)
 	return value
 }
 
@@ -56,7 +57,7 @@ func PullInLocalCache(key string) []byte {
 func PutInLocalCache(key string, value []byte) {
 	logger.Info("f=PutInLocalCache key=%s value=%s", key, value)
 
-	if err := localCache.Set(key, value); err != nil {
+	if err := bCache.Set(key, value); err != nil {
 		logger.Error("f=PutInLocalCache err=%s", err)
 	}
 }
