@@ -4,16 +4,25 @@ import (
 	"encoding/json"
 	"fmt"
 
-	"github.com/jcsw/go-api-learn/pkg/infra/logger"
-
 	"github.com/jcsw/go-api-learn/pkg/infra/cache"
 	"github.com/jcsw/go-api-learn/pkg/infra/database/repository"
+	"github.com/jcsw/go-api-learn/pkg/infra/logger"
 )
 
 const prefixKey = "customer"
 
+//CustomerCacheStore the customer cache store
+type CustomerCacheStore interface {
+	RetriveCustomerEntityInCache(customerName string) *repository.CustomerEntity
+	PersistCustomerEntityInCache(customerEntity *repository.CustomerEntity)
+}
+
+//CacheStore a cache store
+type CacheStore struct {
+}
+
 // RetriveCustomerEntityInCache retrive the customerEntity in cache
-func RetriveCustomerEntityInCache(customerName string) *repository.CustomerEntity {
+func (CacheStore) RetriveCustomerEntityInCache(customerName string) *repository.CustomerEntity {
 
 	customerInBytes := cache.PullInLocalCache(makeCacheKey(customerName))
 	if customerInBytes == nil {
@@ -30,10 +39,10 @@ func RetriveCustomerEntityInCache(customerName string) *repository.CustomerEntit
 }
 
 // PersistCustomerEntityInCache persist the customerEntity in cache
-func PersistCustomerEntityInCache(customerEntity *repository.CustomerEntity) {
+func (CacheStore) PersistCustomerEntityInCache(customerEntity *repository.CustomerEntity) {
 
 	customerInBytes, err := json.Marshal(customerEntity)
-	if err == nil {
+	if err != nil {
 		logger.Warn("f=PersistCustomerEntityInCache err=%v", err)
 		return
 	}

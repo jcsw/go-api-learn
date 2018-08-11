@@ -5,6 +5,7 @@ import (
 	"net/http"
 
 	"github.com/jcsw/go-api-learn/pkg/domain"
+	"github.com/jcsw/go-api-learn/pkg/infra/cache/cachestore"
 	"github.com/jcsw/go-api-learn/pkg/infra/database"
 	"github.com/jcsw/go-api-learn/pkg/infra/database/repository"
 )
@@ -58,7 +59,9 @@ func getCustomer(w http.ResponseWriter, r *http.Request) {
 	name, _ := r.URL.Query()["name"]
 
 	customerRepository := repository.Repository{MongoSession: mongoSession}
-	customer, err := domain.CustomerByName(&customerRepository, name[0])
+	customerCacheStory := cachestore.CacheStore{}
+
+	customer, err := domain.CustomerByName(&customerRepository, &customerCacheStory, name[0])
 	if err != nil {
 		respondWithError(w, http.StatusInternalServerError, err.Error())
 		return

@@ -1,4 +1,4 @@
-package domain_test
+package domain
 
 import (
 	"errors"
@@ -8,15 +8,17 @@ import (
 	"github.com/stretchr/testify/mock"
 	"gopkg.in/mgo.v2/bson"
 
-	"github.com/jcsw/go-api-learn/pkg/domain"
 	"github.com/jcsw/go-api-learn/pkg/infra/database/repository"
 )
 
 func TestShouldCreateNewCustomer(t *testing.T) {
 
-	newCustomer := domain.Customer{Name: "Marcos", City: "Santos"}
+	newCustomer := Customer{Name: "Marcos", City: "Santos"}
 
-	createdCustomer, err := domain.CreateCustomer(&RepositoryMock{}, &newCustomer)
+	repositoryMock := &RepositoryMock{}
+	repositoryMock.On("InsertCustomer", newCustomer.toEntity()).Return(nil)
+
+	createdCustomer, err := CreateCustomer(repositoryMock, &newCustomer)
 
 	assert.Nil(t, err)
 
@@ -25,52 +27,78 @@ func TestShouldCreateNewCustomer(t *testing.T) {
 		assert.Equal(t, newCustomer.City, createdCustomer.City)
 		assert.NotEmpty(t, createdCustomer.ID)
 	}
+
+	repositoryMock.AssertCalled(t, "InsertCustomer", mock.Anything)
 }
 
 func TestShouldNotCreateCustomerWhenNameIsEmpty(t *testing.T) {
 
-	newCustomer := domain.Customer{City: "Santos"}
+	newCustomer := Customer{City: "Santos"}
 
-	createdCustomer, err := domain.CreateCustomer(&RepositoryMock{}, &newCustomer)
+	repositoryMock := &RepositoryMock{}
+	repositoryMock.On("InsertCustomer", mock.Anything).Return(nil)
+
+	createdCustomer, err := CreateCustomer(repositoryMock, &newCustomer)
 
 	assert.Nil(t, createdCustomer)
 
 	if assert.NotNil(t, err) {
 		assert.Equal(t, "Invalid value 'name'", err.Error())
 	}
+
+	repositoryMock.AssertNotCalled(t, "InsertCustomer", mock.Anything)
 }
 
 func TestShouldNotCreateCustomerWhenCityIsEmpty(t *testing.T) {
 
-	newCustomer := domain.Customer{Name: "João"}
+	newCustomer := Customer{Name: "João"}
 
-	createdCustomer, err := domain.CreateCustomer(&RepositoryMock{}, &newCustomer)
+	repositoryMock := &RepositoryMock{}
+	repositoryMock.On("InsertCustomer", mock.Anything).Return(nil)
+
+	createdCustomer, err := CreateCustomer(repositoryMock, &newCustomer)
 
 	assert.Nil(t, createdCustomer)
 
 	if assert.NotNil(t, err) {
 		assert.Equal(t, "Invalid value 'city'", err.Error())
 	}
+
+	repositoryMock.AssertNotCalled(t, "InsertCustomer", mock.Anything)
 }
 
 func TestShouldNotCreateCustomerWhenRepositoryIsUnavaliable(t *testing.T) {
 
-	newCustomer := domain.Customer{Name: "Leandro", City: "Santos"}
+	newCustomer := Customer{Name: "Leandro", City: "Santos"}
 
-	createdCustomer, err := domain.CreateCustomer(&RepositoryMock{}, &newCustomer)
+	repositoryMock := &RepositoryMock{}
+	repositoryMock.On("InsertCustomer", newCustomer.toEntity()).
+		Return(errors.New("Error"))
+
+	createdCustomer, err := CreateCustomer(repositoryMock, &newCustomer)
 
 	assert.Nil(t, createdCustomer)
 
 	if assert.NotNil(t, err) {
 		assert.Contains(t, err.Error(), "Could not complete customer registration.")
 	}
+
+	repositoryMock.AssertCalled(t, "InsertCustomer", mock.Anything)
 }
 
-func TestShouldReturnCustomerWhenNameExists(t *testing.T) {
+func TestShouldReturnCustomerWhenNameExistsInDatabase(t *testing.T) {
 
 	customerName := "Lucas"
 
-	customer, err := domain.CustomerByName(&RepositoryMock{}, customerName)
+	repositoryMock := &RepositoryMock{}
+	customerInDataBase := repository.CustomerEntity{ID: bson.NewObjectId(), Name: customerName, City: "São Paulo"}
+	repositoryMock.On("FindCustomerByName", customerName).Return(&customerInDataBase, nil)
+
+	cacheStoreMock := &CacheStoreMock{}
+	cacheStoreMock.On("RetriveCustomerEntityInCache", customerName).Return(nil)
+	cacheStoreMock.On("PersistCustomerEntityInCache", &customerInDataBase)
+
+	customer, err := CustomerByName(repositoryMock, cacheStoreMock, customerName)
 
 	assert.Nil(t, err)
 
@@ -79,36 +107,92 @@ func TestShouldReturnCustomerWhenNameExists(t *testing.T) {
 		assert.NotEmpty(t, customer.City)
 		assert.NotEmpty(t, customer.ID)
 	}
+
+	repositoryMock.AssertCalled(t, "FindCustomerByName", customerName)
+
+	cacheStoreMock.AssertCalled(t, "RetriveCustomerEntityInCache", customerName)
+	cacheStoreMock.AssertCalled(t, "PersistCustomerEntityInCache", &customerInDataBase)
 }
 
-func TestShouldReturnNilWhenNameNotExists(t *testing.T) {
+func TestShouldReturnCustomerWhenNameExistsInCache(t *testing.T) {
+
+	customerName := "Jessica"
+
+	repositoryMock := &RepositoryMock{}
+	repositoryMock.On("FindCustomerByName", customerName).Return(nil, nil)
+
+	cacheStoreMock := &CacheStoreMock{}
+	customerInCache := repository.CustomerEntity{ID: bson.NewObjectId(), Name: customerName, City: "São Paulo"}
+	cacheStoreMock.On("RetriveCustomerEntityInCache", customerName).Return(&customerInCache)
+
+	customer, err := CustomerByName(repositoryMock, cacheStoreMock, customerName)
+
+	assert.Nil(t, err)
+
+	if assert.NotNil(t, customer) {
+		assert.Equal(t, customerName, customer.Name)
+		assert.NotEmpty(t, customer.City)
+		assert.NotEmpty(t, customer.ID)
+	}
+
+	repositoryMock.AssertNotCalled(t, "FindCustomerByName", customerName)
+
+	cacheStoreMock.AssertCalled(t, "RetriveCustomerEntityInCache", customerName)
+	cacheStoreMock.AssertNotCalled(t, "PersistCustomerEntityInCache", mock.Anything)
+}
+
+func TestShouldReturnNilWhenNameNotExistsInCacheAndDatabase(t *testing.T) {
 
 	customerName := "Marcos"
 
-	customer, err := domain.CustomerByName(&RepositoryMock{}, customerName)
+	repositoryMock := &RepositoryMock{}
+	repositoryMock.On("FindCustomerByName", customerName).Return(nil, nil)
+
+	cacheStoreMock := &CacheStoreMock{}
+	cacheStoreMock.On("RetriveCustomerEntityInCache", customerName).Return(nil)
+
+	customer, err := CustomerByName(repositoryMock, cacheStoreMock, customerName)
 
 	assert.Nil(t, err)
 	assert.Nil(t, customer)
+
+	repositoryMock.AssertCalled(t, "FindCustomerByName", customerName)
+
+	cacheStoreMock.AssertCalled(t, "RetriveCustomerEntityInCache", customerName)
+	cacheStoreMock.AssertNotCalled(t, "PersistCustomerEntityInCache", mock.Anything)
 }
 
-func TestShouldReturnErrorWhenRepositoryIsUnavaliable(t *testing.T) {
+func TestShouldReturnErrorWhenNotHasInCacheAndRepositoryIsUnavaliable(t *testing.T) {
 
 	customerName := "Leandro"
 
-	customer, err := domain.CustomerByName(&RepositoryMock{}, customerName)
+	repositoryMock := &RepositoryMock{}
+	repositoryMock.On("FindCustomerByName", customerName).Return(nil, errors.New("Error"))
+
+	cacheStoreMock := &CacheStoreMock{}
+	cacheStoreMock.On("RetriveCustomerEntityInCache", customerName).Return(nil)
+
+	customer, err := CustomerByName(repositoryMock, cacheStoreMock, customerName)
 
 	assert.Nil(t, customer)
 
 	if assert.NotNil(t, err) {
 		assert.Contains(t, err.Error(), "Could not find customer.")
 	}
+
+	repositoryMock.AssertCalled(t, "FindCustomerByName", customerName)
+
+	cacheStoreMock.AssertCalled(t, "RetriveCustomerEntityInCache", customerName)
+	cacheStoreMock.AssertNotCalled(t, "PersistCustomerEntityInCache", mock.Anything)
 }
 
 func TestShouldReturnCustomersWhenExistsOneCustomer(t *testing.T) {
 
-	findAllCustomersMock = "ReturnOneCustomers"
+	repositoryMock := &RepositoryMock{}
+	customerAmanda := &repository.CustomerEntity{ID: bson.NewObjectId(), Name: "Amanda", City: "São Paulo"}
+	repositoryMock.On("FindAllCustomers").Return([]*repository.CustomerEntity{customerAmanda}, nil)
 
-	customers, err := domain.Customers(&RepositoryMock{})
+	customers, err := Customers(repositoryMock)
 
 	assert.Nil(t, err)
 
@@ -119,13 +203,18 @@ func TestShouldReturnCustomersWhenExistsOneCustomer(t *testing.T) {
 		assert.NotEmpty(t, customers[0].City)
 		assert.NotEmpty(t, customers[0].ID)
 	}
+
+	repositoryMock.AssertCalled(t, "FindAllCustomers")
 }
 
 func TestShouldReturnCustomersWhenExistsTwoCustomer(t *testing.T) {
 
-	findAllCustomersMock = "ReturnTwoCustomers"
+	repositoryMock := &RepositoryMock{}
+	customerAmanda := &repository.CustomerEntity{ID: bson.NewObjectId(), Name: "Amanda", City: "São Paulo"}
+	customerMarcos := &repository.CustomerEntity{ID: bson.NewObjectId(), Name: "Marcos", City: "Recife"}
+	repositoryMock.On("FindAllCustomers").Return([]*repository.CustomerEntity{customerAmanda, customerMarcos}, nil)
 
-	customers, err := domain.Customers(&RepositoryMock{})
+	customers, err := Customers(repositoryMock)
 
 	assert.Nil(t, err)
 
@@ -140,23 +229,29 @@ func TestShouldReturnCustomersWhenExistsTwoCustomer(t *testing.T) {
 		assert.NotEmpty(t, customers[1].City)
 		assert.NotEmpty(t, customers[1].ID)
 	}
+
+	repositoryMock.AssertCalled(t, "FindAllCustomers")
 }
 
 func TestShouldReturnEmptyCustomersWhenNotExists(t *testing.T) {
 
-	findAllCustomersMock = "ReturnEmpty"
+	repositoryMock := &RepositoryMock{}
+	repositoryMock.On("FindAllCustomers").Return([]*repository.CustomerEntity{}, nil)
 
-	customers, err := domain.Customers(&RepositoryMock{})
+	customers, err := Customers(repositoryMock)
 
 	assert.Nil(t, err)
 	assert.Empty(t, customers)
+
+	repositoryMock.AssertCalled(t, "FindAllCustomers")
 }
 
 func TestShouldReturnErrorWhenReturnError(t *testing.T) {
 
-	findAllCustomersMock = "ReturnError"
+	repositoryMock := &RepositoryMock{}
+	repositoryMock.On("FindAllCustomers").Return(nil, errors.New("Error"))
 
-	customers, err := domain.Customers(&RepositoryMock{})
+	customers, err := Customers(repositoryMock)
 
 	assert.Empty(t, customers)
 
@@ -170,60 +265,57 @@ type RepositoryMock struct {
 }
 
 func (m *RepositoryMock) InsertCustomer(newCustomerEntity *repository.CustomerEntity) error {
+	args := m.Called(newCustomerEntity)
 
-	if newCustomerEntity.Name == "Leandro" {
-		return errors.New("Could not communicate with mongodb server.")
+	if args.Error(0) == nil {
+		newCustomerEntity.ID = bson.NewObjectId()
 	}
 
-	newCustomerEntity.ID = bson.NewObjectId()
-	return nil
+	return args.Error(0)
 }
 
 func (m *RepositoryMock) FindCustomerByName(name string) (*repository.CustomerEntity, error) {
-	if name == "Lucas" {
-		return &repository.CustomerEntity{ID: bson.NewObjectId(), Name: name, City: "São Paulo"}, nil
+	args := m.Called(name)
+
+	if args.Error(1) != nil {
+		return nil, args.Error(1)
 	}
 
-	if name == "Leandro" {
-		return nil, errors.New("Could not communicate with mongodb server.")
+	if args.Get(0) == nil {
+		return nil, nil
 	}
 
-	return nil, nil
+	return args.Get(0).(*repository.CustomerEntity), nil
 }
 
 func (m *RepositoryMock) FindAllCustomers() ([]*repository.CustomerEntity, error) {
+	args := m.Called()
 
-	switch findAllCustomersMock {
-	case "ReturnOneCustomers":
-		return configureFindAllCustomersToReturnOneCustomer()
-	case "ReturnTwoCustomers":
-		return configureFindAllCustomersToReturnTwoCustomer()
-	case "ReturnEmpty":
-		return configureFindAllCustomersToReturnEmpty()
-	case "ReturnError":
-		return configureFindAllCustomersToReturnError()
+	if args.Error(1) != nil {
+		return nil, args.Error(1)
 	}
 
-	return nil, nil
+	if args.Get(0) == nil {
+		return nil, nil
+	}
+
+	return args.Get(0).([]*repository.CustomerEntity), nil
 }
 
-var findAllCustomersMock string
-
-func configureFindAllCustomersToReturnEmpty() ([]*repository.CustomerEntity, error) {
-	return []*repository.CustomerEntity{}, nil
+type CacheStoreMock struct {
+	mock.Mock
 }
 
-func configureFindAllCustomersToReturnError() ([]*repository.CustomerEntity, error) {
-	return nil, errors.New("Could not communicate with mongodb server.")
+func (m *CacheStoreMock) RetriveCustomerEntityInCache(customerName string) *repository.CustomerEntity {
+	args := m.Called(customerName)
+
+	if args.Get(0) == nil {
+		return nil
+	}
+
+	return args.Get(0).(*repository.CustomerEntity)
 }
 
-func configureFindAllCustomersToReturnOneCustomer() ([]*repository.CustomerEntity, error) {
-	customer := &repository.CustomerEntity{ID: bson.NewObjectId(), Name: "Amanda", City: "São Paulo"}
-	return []*repository.CustomerEntity{customer}, nil
-}
-
-func configureFindAllCustomersToReturnTwoCustomer() ([]*repository.CustomerEntity, error) {
-	customerOne := &repository.CustomerEntity{ID: bson.NewObjectId(), Name: "Amanda", City: "São Paulo"}
-	customerTwo := &repository.CustomerEntity{ID: bson.NewObjectId(), Name: "Marcos", City: "Recife"}
-	return []*repository.CustomerEntity{customerOne, customerTwo}, nil
+func (m *CacheStoreMock) PersistCustomerEntityInCache(customerEntity *repository.CustomerEntity) {
+	m.Called(customerEntity)
 }

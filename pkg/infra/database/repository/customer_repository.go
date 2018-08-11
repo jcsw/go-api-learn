@@ -33,8 +33,6 @@ type CustomerRepository interface {
 
 // EnsureCustomerIndex create index on customer collection
 func EnsureCustomerIndex(mongoSession *mgo.Session) {
-	defer logger.Info("Created index on customer collection")
-
 	session := mongoSession.Copy()
 	defer session.Close()
 
@@ -48,8 +46,11 @@ func EnsureCustomerIndex(mongoSession *mgo.Session) {
 
 	err := mongoSession.DB(databaseName).C(collectionName).EnsureIndex(index)
 	if err != nil {
-		logger.Fatal("Could not create index on customer collection, err=%v", err)
+		logger.Error("Could not create index on customer collection, err=%v", err)
+		return
 	}
+
+	logger.Info("Created index on customer collection")
 }
 
 func (repository *Repository) customerCollection() *mgo.Collection {
@@ -57,34 +58,45 @@ func (repository *Repository) customerCollection() *mgo.Collection {
 }
 
 // InsertCustomer function to persist customer
-func (repository Repository) InsertCustomer(newCustomerEntity *CustomerEntity) error {
+func (repository *Repository) InsertCustomer(newCustomerEntity *CustomerEntity) error {
 	newCustomerEntity.ID = bson.NewObjectId()
 	err := repository.customerCollection().Insert(&newCustomerEntity)
-	return err
+
+	if err != nil {
+		logger.Error("f=InsertCustomer newCustomerEntity=%v err=%v", newCustomerEntity, err)
+		return err
+	}
+
+	logger.Info("f=InsertCustomer newCustomerEntity=%v", newCustomerEntity)
+	return nil
 }
 
 // FindAllCustomers function to find all customers
-func (repository Repository) FindAllCustomers() ([]*CustomerEntity, error) {
+func (repository *Repository) FindAllCustomers() ([]*CustomerEntity, error) {
 
 	customers := []*CustomerEntity{}
 	err := repository.customerCollection().Find(nil).All(&customers)
 
 	if err != nil {
+		logger.Error("f=FindAllCustomers err=%v", err)
 		return nil, err
 	}
 
-	return customers, err
+	logger.Info("f=FindAllCustomers length=%d", len(customers))
+	return customers, nil
 }
 
 // FindCustomerByName function to find customer by name
-func (repository Repository) FindCustomerByName(name string) (*CustomerEntity, error) {
+func (repository *Repository) FindCustomerByName(name string) (*CustomerEntity, error) {
 
 	customer := CustomerEntity{}
 	err := repository.customerCollection().Find(bson.M{"name": name}).One(&customer)
 
 	if err != nil {
+		logger.Error("f=FindCustomerByName name=%s err=%v", name, err)
 		return nil, err
 	}
 
+	logger.Info("f=FindCustomerByName customer=%v", customer)
 	return &customer, err
 }

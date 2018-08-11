@@ -4,6 +4,7 @@ import (
 	"errors"
 	"strings"
 
+	"github.com/jcsw/go-api-learn/pkg/infra/cache/cachestore"
 	"github.com/jcsw/go-api-learn/pkg/infra/database/repository"
 )
 
@@ -74,7 +75,12 @@ func Customers(customerRepository repository.CustomerRepository) ([]*Customer, e
 }
 
 // CustomerByName return customer by name
-func CustomerByName(customerRepository repository.CustomerRepository, name string) (*Customer, error) {
+func CustomerByName(customerRepository repository.CustomerRepository, customerCacheStore cachestore.CustomerCacheStore, name string) (*Customer, error) {
+
+	customerEntity := customerCacheStore.RetriveCustomerEntityInCache(name)
+	if customerEntity != nil {
+		return makeCustomerByEntity(customerEntity), nil
+	}
 
 	customerEntity, err := customerRepository.FindCustomerByName(name)
 	if err != nil {
@@ -84,6 +90,8 @@ func CustomerByName(customerRepository repository.CustomerRepository, name strin
 	if customerEntity == nil {
 		return nil, nil
 	}
+
+	customerCacheStore.PersistCustomerEntityInCache(customerEntity)
 
 	return makeCustomerByEntity(customerEntity), nil
 }

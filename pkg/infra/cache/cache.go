@@ -45,7 +45,7 @@ func monitorBigCache() {
 func PullInLocalCache(key string) []byte {
 	value, err := bCache.Get(key)
 	if err != nil {
-		logger.Error("f=PullInLocalCache key=%s err=%v", key, err)
+		logger.Info("f=PullInLocalCache key=%s err=%v", key, err)
 		return nil
 	}
 
