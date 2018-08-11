@@ -34,7 +34,7 @@ func PersistCustomerEntityInCache(customerEntity *repository.CustomerEntity) {
 
 	customerInBytes, err := json.Marshal(customerEntity)
 	if err == nil {
-		logger.Warn("f=PersistCustomerEntityInCache  err=%v", err)
+		logger.Warn("f=PersistCustomerEntityInCache err=%v", err)
 		return
 	}
 
