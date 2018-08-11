@@ -33,7 +33,7 @@ func CustomerHandle(w http.ResponseWriter, r *http.Request) {
 
 func listCustomers(w http.ResponseWriter, r *http.Request) {
 
-	mongoSession := database.RetrieveMongoSession()
+	mongoSession := database.RetrieveMongoDBSession()
 	if mongoSession != nil {
 		respondWithError(w, http.StatusInternalServerError, "InternalServerError")
 		return
@@ -52,7 +52,7 @@ func listCustomers(w http.ResponseWriter, r *http.Request) {
 
 func getCustomer(w http.ResponseWriter, r *http.Request) {
 
-	mongoSession := database.RetrieveMongoSession()
+	mongoSession := database.RetrieveMongoDBSession()
 	if mongoSession != nil {
 		respondWithError(w, http.StatusInternalServerError, "InternalServerError")
 		return
@@ -85,7 +85,7 @@ func addCustomer(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	mongoSession := database.RetrieveMongoSession()
+	mongoSession := database.RetrieveMongoDBSession()
 	if mongoSession != nil {
 		respondWithError(w, http.StatusInternalServerError, "InternalServerError")
 		return

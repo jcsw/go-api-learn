@@ -1,6 +1,7 @@
 package database
 
 import (
+	"sync/atomic"
 	"time"
 
 	"github.com/jcsw/go-api-learn/pkg/infra/database/repository"
@@ -12,28 +13,56 @@ const (
 	databaseName = "admin"
 )
 
-var mgoSession *mgo.Session
+var (
+	mgoSession *mgo.Session
+	healthy    int32
+)
 
-// RetrieveMongoSession Return a mongodb session
-func RetrieveMongoSession() *mgo.Session {
-	return mgoSession.Clone()
-}
-
-// InitializeMongoDBSession initiliaze a mongodb session
+// InitializeMongoDBSession initiliaze the mongodb session
 func InitializeMongoDBSession() {
 	mgoSession = createMongoDBSession()
 	go monitorMongoDBSession()
 }
 
+// GetMongoDBStatus return current mongoDB session status
+func GetMongoDBStatus() *int32 {
+	return &healthy
+}
+
+// RetrieveMongoDBSession Return a mongodb session
+func RetrieveMongoDBSession() *mgo.Session {
+	return mgoSession.Clone()
+}
+
+// CloseMongoDBSession close the mongodb session
+func CloseMongoDBSession() {
+	if mgoSession != nil {
+		mgoSession.Close()
+		logger.Info("MongoDB session it's closed")
+	}
+}
+
 func monitorMongoDBSession() {
 	for {
 		time.Sleep(3 * time.Second)
-		if mgoSession != nil && mgoSession.Ping() == nil {
-			logger.Info("MongoDB session servers %v", mgoSession.LiveServers())
-		} else {
+
+		if mgoSession == nil || mgoSession.Ping() != nil {
+			setMongoDBStatusDown()
+			logger.Warn("MongoDB session is not active, trying to reconnect")
 			mgoSession = createMongoDBSession()
+		} else {
+			setMongoDBStatusUp()
+			logger.Info("MongoDB session it's alive with servers %v", mgoSession.LiveServers())
 		}
 	}
+}
+
+func setMongoDBStatusUp() {
+	atomic.StoreInt32(&healthy, 1)
+}
+
+func setMongoDBStatusDown() {
+	atomic.StoreInt32(&healthy, 0)
 }
 
 func createMongoDBSession() *mgo.Session {
@@ -64,7 +93,9 @@ func createMongoDBSession() *mgo.Session {
 	}
 
 	session.SetMode(mgo.Monotonic, true)
-	logger.Info("MongoBD session created with servers %v", session.LiveServers())
+
+	logger.Info("MongoDB session created with servers %v", session.LiveServers())
+	setMongoDBStatusUp()
 
 	repository.EnsureCustomerIndex(session)
 

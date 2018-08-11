@@ -38,6 +38,7 @@ func main() {
 	router := http.NewServeMux()
 	router.Handle("/", index())
 	router.Handle("/health", health())
+	router.HandleFunc("/monitor", application.MonitorHandle)
 	router.HandleFunc("/customer", application.CustomerHandle)
 
 	nextRequestID := func() string {
@@ -45,7 +46,9 @@ func main() {
 	}
 
 	database.InitializeMongoDBSession()
-	cache.InitializeBigCache()
+	defer database.CloseMongoDBSession()
+
+	cache.InitializeLocalCache()
 
 	server := &http.Server{
 		Addr:         listenAddr,
