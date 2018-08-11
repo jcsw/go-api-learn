@@ -44,7 +44,7 @@ func CloseMongoDBSession() {
 
 func monitorMongoDBSession() {
 	for {
-		time.Sleep(3 * time.Second)
+		time.Sleep(10 * time.Second)
 
 		if mgoSession == nil || mgoSession.Ping() != nil {
 			setMongoDBStatusDown()

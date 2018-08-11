@@ -27,7 +27,7 @@ func InitializeLocalCache() {
 
 func monitorBigCache() {
 	for {
-		time.Sleep(10 * time.Second)
+		time.Sleep(30 * time.Second)
 		if bCache != nil {
 			logger.Info("BigCache stats: collisions=%v delHits=%v delMisses=%v hits=%v misses=%v",
 				bCache.Stats().Collisions,

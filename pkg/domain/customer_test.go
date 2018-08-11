@@ -191,7 +191,7 @@ func (m *RepositoryMock) FindCustomerByName(name string) (*repository.CustomerEn
 	return nil, nil
 }
 
-func (m *RepositoryMock) FindAllCustomers() ([]repository.CustomerEntity, error) {
+func (m *RepositoryMock) FindAllCustomers() ([]*repository.CustomerEntity, error) {
 
 	switch findAllCustomersMock {
 	case "ReturnOneCustomers":
@@ -209,21 +209,21 @@ func (m *RepositoryMock) FindAllCustomers() ([]repository.CustomerEntity, error)
 
 var findAllCustomersMock string
 
-func configureFindAllCustomersToReturnEmpty() ([]repository.CustomerEntity, error) {
-	return []repository.CustomerEntity{}, nil
+func configureFindAllCustomersToReturnEmpty() ([]*repository.CustomerEntity, error) {
+	return []*repository.CustomerEntity{}, nil
 }
 
-func configureFindAllCustomersToReturnError() ([]repository.CustomerEntity, error) {
+func configureFindAllCustomersToReturnError() ([]*repository.CustomerEntity, error) {
 	return nil, errors.New("Could not communicate with mongodb server.")
 }
 
-func configureFindAllCustomersToReturnOneCustomer() ([]repository.CustomerEntity, error) {
-	customer := repository.CustomerEntity{ID: bson.NewObjectId(), Name: "Amanda", City: "São Paulo"}
-	return []repository.CustomerEntity{customer}, nil
+func configureFindAllCustomersToReturnOneCustomer() ([]*repository.CustomerEntity, error) {
+	customer := &repository.CustomerEntity{ID: bson.NewObjectId(), Name: "Amanda", City: "São Paulo"}
+	return []*repository.CustomerEntity{customer}, nil
 }
 
-func configureFindAllCustomersToReturnTwoCustomer() ([]repository.CustomerEntity, error) {
-	customerOne := repository.CustomerEntity{ID: bson.NewObjectId(), Name: "Amanda", City: "São Paulo"}
-	customerTwo := repository.CustomerEntity{ID: bson.NewObjectId(), Name: "Marcos", City: "Recife"}
-	return []repository.CustomerEntity{customerOne, customerTwo}, nil
+func configureFindAllCustomersToReturnTwoCustomer() ([]*repository.CustomerEntity, error) {
+	customerOne := &repository.CustomerEntity{ID: bson.NewObjectId(), Name: "Amanda", City: "São Paulo"}
+	customerTwo := &repository.CustomerEntity{ID: bson.NewObjectId(), Name: "Marcos", City: "Recife"}
+	return []*repository.CustomerEntity{customerOne, customerTwo}, nil
 }

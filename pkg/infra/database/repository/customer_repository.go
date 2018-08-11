@@ -28,7 +28,7 @@ type Repository struct {
 type CustomerRepository interface {
 	InsertCustomer(newCustomerEntity *CustomerEntity) error
 	FindCustomerByName(name string) (*CustomerEntity, error)
-	FindAllCustomers() ([]CustomerEntity, error)
+	FindAllCustomers() ([]*CustomerEntity, error)
 }
 
 // EnsureCustomerIndex create index on customer collection
@@ -64,9 +64,9 @@ func (repository Repository) InsertCustomer(newCustomerEntity *CustomerEntity) e
 }
 
 // FindAllCustomers function to find all customers
-func (repository Repository) FindAllCustomers() ([]CustomerEntity, error) {
+func (repository Repository) FindAllCustomers() ([]*CustomerEntity, error) {
 
-	customers := []CustomerEntity{}
+	customers := []*CustomerEntity{}
 	err := repository.customerCollection().Find(nil).All(&customers)
 
 	if err != nil {

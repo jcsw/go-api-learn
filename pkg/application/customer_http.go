@@ -35,10 +35,8 @@ func listCustomers(w http.ResponseWriter, r *http.Request) {
 
 	mongoSession := database.RetrieveMongoDBSession()
 	if mongoSession != nil {
-		respondWithError(w, http.StatusInternalServerError, "InternalServerError")
-		return
+		defer mongoSession.Close()
 	}
-	defer mongoSession.Close()
 
 	customerRepository := repository.Repository{MongoSession: mongoSession}
 	customers, err := domain.Customers(&customerRepository)
@@ -54,10 +52,8 @@ func getCustomer(w http.ResponseWriter, r *http.Request) {
 
 	mongoSession := database.RetrieveMongoDBSession()
 	if mongoSession != nil {
-		respondWithError(w, http.StatusInternalServerError, "InternalServerError")
-		return
+		defer mongoSession.Close()
 	}
-	defer mongoSession.Close()
 
 	name, _ := r.URL.Query()["name"]
 
@@ -77,20 +73,18 @@ func getCustomer(w http.ResponseWriter, r *http.Request) {
 }
 
 func addCustomer(w http.ResponseWriter, r *http.Request) {
-	defer r.Body.Close()
 
 	var newCustomer domain.Customer
 	if err := json.NewDecoder(r.Body).Decode(&newCustomer); err != nil {
 		respondWithError(w, http.StatusBadRequest, "Invalid request payload")
 		return
 	}
+	defer r.Body.Close()
 
 	mongoSession := database.RetrieveMongoDBSession()
 	if mongoSession != nil {
-		respondWithError(w, http.StatusInternalServerError, "InternalServerError")
-		return
+		defer mongoSession.Close()
 	}
-	defer mongoSession.Close()
 
 	customerRepository := repository.Repository{MongoSession: mongoSession}
 	createdCustomer, err := domain.CreateCustomer(&customerRepository, &newCustomer)

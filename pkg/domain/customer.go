@@ -14,13 +14,27 @@ type Customer struct {
 	City string `json:"city"`
 }
 
-func validateNewCustomer(newCustomer *Customer) error {
+func (customer *Customer) toEntity() *repository.CustomerEntity {
 
-	if len(strings.TrimSpace(newCustomer.Name)) == 0 {
+	customerEntity := repository.CustomerEntity{
+		Name: customer.Name,
+		City: customer.City,
+	}
+
+	return &customerEntity
+}
+
+func makeCustomerByEntity(customerEntity *repository.CustomerEntity) *Customer {
+	return &Customer{ID: customerEntity.ID.Hex(), Name: customerEntity.Name, City: customerEntity.City}
+}
+
+func validateCustomer(customer *Customer) error {
+
+	if len(strings.TrimSpace(customer.Name)) == 0 {
 		return errors.New("Invalid value 'name'")
 	}
 
-	if len(strings.TrimSpace(newCustomer.City)) == 0 {
+	if len(strings.TrimSpace(customer.City)) == 0 {
 		return errors.New("Invalid value 'city'")
 	}
 
@@ -30,33 +44,30 @@ func validateNewCustomer(newCustomer *Customer) error {
 // CreateCustomer function to create a new customer
 func CreateCustomer(customerRepository repository.CustomerRepository, newCustomer *Customer) (*Customer, error) {
 
-	if err := validateNewCustomer(newCustomer); err != nil {
+	if err := validateCustomer(newCustomer); err != nil {
 		return nil, err
 	}
 
-	newCustomerEntity := &repository.CustomerEntity{
-		Name: newCustomer.Name,
-		City: newCustomer.City,
-	}
+	newCustomerEntity := newCustomer.toEntity()
 
 	if err := customerRepository.InsertCustomer(newCustomerEntity); err != nil {
 		return nil, errors.New("Could not complete customer registration.\n" + err.Error())
 	}
 
-	return &Customer{ID: newCustomerEntity.ID.Hex(), Name: newCustomerEntity.Name, City: newCustomerEntity.City}, nil
+	return makeCustomerByEntity(newCustomerEntity), nil
 }
 
 // Customers return all customers
-func Customers(customerRepository repository.CustomerRepository) ([]Customer, error) {
+func Customers(customerRepository repository.CustomerRepository) ([]*Customer, error) {
 
 	customersEntity, err := customerRepository.FindAllCustomers()
 	if err != nil {
 		return nil, errors.New("Could not find customers.\n" + err.Error())
 	}
 
-	customers := []Customer{}
-	for _, entity := range customersEntity {
-		customers = append(customers, Customer{ID: entity.ID.Hex(), Name: entity.Name, City: entity.City})
+	customers := make([]*Customer, len(customersEntity), len(customersEntity))
+	for i, entity := range customersEntity {
+		customers[i] = makeCustomerByEntity(entity)
 	}
 
 	return customers, nil
@@ -74,5 +85,5 @@ func CustomerByName(customerRepository repository.CustomerRepository, name strin
 		return nil, nil
 	}
 
-	return &Customer{ID: customerEntity.ID.Hex(), Name: customerEntity.Name, City: customerEntity.City}, nil
+	return makeCustomerByEntity(customerEntity), nil
 }
