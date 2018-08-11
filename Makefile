@@ -26,6 +26,9 @@ build:
 test:
 	$(GO_TEST) -v ./... -covermode=count -coverprofile=$(BUILD_DIRECTORY)/cover.out
 	$(GO_COVER) -html=$(BUILD_DIRECTORY)/cover.out -o $(BUILD_DIRECTORY)/coverage.html
+itest:
+	$(GO_TEST) -v -tags=integration ./... -covermode=count -coverprofile=$(BUILD_DIRECTORY)/icover.out
+	$(GO_COVER) -html=$(BUILD_DIRECTORY)/icover.out -o $(BUILD_DIRECTORY)/icoverage.html
 vet:
 	$(GO_VET) -v -shadow ./...
 lint:

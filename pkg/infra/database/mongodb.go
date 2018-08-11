@@ -20,6 +20,7 @@ var (
 
 // InitializeMongoDBSession initiliaze the mongodb session
 func InitializeMongoDBSession() {
+	setMongoDBStatusDown()
 	mgoSession = createMongoDBSession()
 	go monitorMongoDBSession()
 }
