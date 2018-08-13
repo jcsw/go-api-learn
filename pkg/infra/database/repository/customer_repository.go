@@ -46,11 +46,11 @@ func EnsureCustomerIndex(mongoSession *mgo.Session) {
 
 	err := mongoSession.DB(databaseName).C(collectionName).EnsureIndex(index)
 	if err != nil {
-		logger.Error("Could not create index on customer collection, err=%v", err)
+		logger.Error("f=EnsureCustomerIndex Could not create index, err=%v", err)
 		return
 	}
 
-	logger.Info("Created index on customer collection")
+	logger.Info("f=EnsureCustomerIndex Index created")
 }
 
 func (repository *Repository) customerCollection() *mgo.Collection {
