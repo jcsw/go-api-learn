@@ -4,13 +4,11 @@ import (
 	"sync/atomic"
 	"time"
 
+	"github.com/jcsw/go-api-learn/pkg/infra/properties"
+
 	"github.com/jcsw/go-api-learn/pkg/infra/database/repository"
 	"github.com/jcsw/go-api-learn/pkg/infra/logger"
 	"gopkg.in/mgo.v2"
-)
-
-const (
-	databaseName = "admin"
 )
 
 var (
@@ -22,7 +20,7 @@ var (
 func InitializeMongoDBSession() {
 	setMongoDBStatusDown()
 	mgoSession = createMongoDBSession()
-	go monitorMongoDBSession()
+	go mongoDBSessionMonitor()
 }
 
 // GetMongoDBStatus return current mongoDB session status
@@ -48,49 +46,15 @@ func CloseMongoDBSession() {
 	}
 }
 
-func monitorMongoDBSession() {
-	for {
-		time.Sleep(10 * time.Second)
-
-		if mgoSession == nil || mgoSession.Ping() != nil {
-			setMongoDBStatusDown()
-			logger.Warn("f=monitorMongoDBSession MongoDB session is not active, trying to reconnect")
-			mgoSession = createMongoDBSession()
-		} else {
-			setMongoDBStatusUp()
-			logger.Info("f=monitorMongoDBSession MongoDB session it's alive with servers %v", mgoSession.LiveServers())
-		}
-	}
-}
-
-func setMongoDBStatusUp() {
-	atomic.StoreInt32(&healthy, 1)
-}
-
-func setMongoDBStatusDown() {
-	atomic.StoreInt32(&healthy, 0)
-}
-
 func createMongoDBSession() *mgo.Session {
 
-	const (
-		username  = "go-api-learn"
-		password  = "admin"
-		timeout   = 500 * time.Millisecond
-		poolLimit = 128
-	)
-
-	host := []string{
-		"localhost:27017",
-	}
-
 	session, err := mgo.DialWithInfo(&mgo.DialInfo{
-		Addrs:     host,
-		Username:  username,
-		Password:  password,
-		Database:  databaseName,
-		Timeout:   timeout,
-		PoolLimit: poolLimit,
+		Addrs:     properties.AppProperties.MongoDB.Hosts,
+		Username:  properties.AppProperties.MongoDB.Username,
+		Password:  properties.AppProperties.MongoDB.Password,
+		Database:  properties.AppProperties.MongoDB.Database,
+		Timeout:   properties.AppProperties.MongoDB.Timeout * time.Millisecond,
+		PoolLimit: properties.AppProperties.MongoDB.PoolLimit,
 	})
 
 	if err != nil {
@@ -106,4 +70,27 @@ func createMongoDBSession() *mgo.Session {
 	repository.EnsureCustomerIndex(session)
 
 	return session
+}
+
+func mongoDBSessionMonitor() {
+	for {
+		time.Sleep(10 * time.Second)
+
+		if mgoSession == nil || mgoSession.Ping() != nil {
+			setMongoDBStatusDown()
+			logger.Warn("f=mongoDBSessionMonitor MongoDB session is not active, trying to reconnect")
+			mgoSession = createMongoDBSession()
+		} else {
+			setMongoDBStatusUp()
+			logger.Info("f=mongoDBSessionMonitor MongoDB session it's alive with servers %v", mgoSession.LiveServers())
+		}
+	}
+}
+
+func setMongoDBStatusUp() {
+	atomic.StoreInt32(&healthy, 1)
+}
+
+func setMongoDBStatusDown() {
+	atomic.StoreInt32(&healthy, 0)
 }

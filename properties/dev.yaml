@@ -1,2 +1,14 @@
 # DEV
+
+# App
 serverPort: 8080
+
+# MongoDB
+mongodb:
+  hosts:
+    - localhost:27017
+  username: go-api-learn
+  password: admin
+  database: admin
+  timeout: 500
+  poolLimit: 128
