@@ -2,7 +2,6 @@ package application
 
 import (
 	"net/http"
-	"sync/atomic"
 
 	"github.com/jcsw/go-api-learn/pkg/infra/database"
 )
@@ -31,7 +30,7 @@ func mongoDBStatus() monitorComponent {
 
 	mongoDBStatus := monitorComponent{Component: "MongoDB"}
 
-	if atomic.LoadInt32(database.GetMongoDBStatus()) == 1 {
+	if database.IsMongoDBSessionAlive() {
 		mongoDBStatus.Status = "OK"
 	} else {
 		mongoDBStatus.Status = "ERROR"

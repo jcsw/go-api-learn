@@ -23,9 +23,9 @@ func InitializeMongoDBSession() {
 	go mongoDBSessionMonitor()
 }
 
-// GetMongoDBStatus return current mongoDB session status
-func GetMongoDBStatus() *int32 {
-	return &healthy
+// IsMongoDBSessionAlive return mongoDB session status
+func IsMongoDBSessionAlive() bool {
+	return atomic.LoadInt32(&healthy) == 1
 }
 
 // RetrieveMongoDBSession Return a mongodb session

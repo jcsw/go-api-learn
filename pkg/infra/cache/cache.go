@@ -22,14 +22,14 @@ func configureBigCache() *bigcache.BigCache {
 // InitializeLocalCache - Initialize the local cache
 func InitializeLocalCache() {
 	bCache = configureBigCache()
-	go monitorBigCache()
+	go bigCacheMonitor()
 }
 
-func monitorBigCache() {
+func bigCacheMonitor() {
 	for {
 		time.Sleep(30 * time.Second)
 		if bCache != nil {
-			logger.Info("BigCache stats: collisions=%v delHits=%v delMisses=%v hits=%v misses=%v",
+			logger.Info("f=bigCacheMonitor BigCache stats: collisions=%v delHits=%v delMisses=%v hits=%v misses=%v",
 				bCache.Stats().Collisions,
 				bCache.Stats().DelHits,
 				bCache.Stats().DelMisses,

@@ -3,7 +3,6 @@
 package database
 
 import (
-	"sync/atomic"
 	"testing"
 
 	"github.com/jcsw/go-api-learn/pkg/infra/properties"
@@ -26,7 +25,7 @@ func TestShouldInitializeMongoDBSession(t *testing.T) {
 	InitializeMongoDBSession()
 	defer CloseMongoDBSession()
 
-	if assert.Equal(t, int32(1), atomic.LoadInt32(GetMongoDBStatus())) {
+	if assert.True(t, IsMongoDBSessionAlive()) {
 
 		mongoDBSession := RetrieveMongoDBSession()
 		defer mongoDBSession.Close()
