@@ -39,7 +39,7 @@ clean:
 	$(GO_CLEAN)
 	rm -f $(BUILD_DIRECTORY)/*
 run:
-	$(GO_RUN) $(APP_INIT)
+	$(GO_RUN) $(APP_INIT) -env=dev
 deps:
 	$(GO_GET) golang.org/x/tools/cmd/cover
 	$(GO_GET) github.com/golang/lint/golint

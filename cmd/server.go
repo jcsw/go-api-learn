@@ -14,6 +14,7 @@ import (
 	"github.com/jcsw/go-api-learn/pkg/infra/cache"
 	"github.com/jcsw/go-api-learn/pkg/infra/database"
 	"github.com/jcsw/go-api-learn/pkg/infra/logger"
+	"github.com/jcsw/go-api-learn/pkg/infra/properties"
 )
 
 type key int
@@ -23,15 +24,17 @@ const (
 )
 
 var (
-	listenAddr string
-	healthy    int32
+	env     string
+	healthy int32
 )
 
 func main() {
 	startDate := time.Now()
 
-	flag.StringVar(&listenAddr, "listen-addr", ":8080", "server listen address")
+	flag.StringVar(&env, "env", "prod", "app environment")
 	flag.Parse()
+
+	properties.LoadProperties(env)
 
 	logger.Info("Server is starting...")
 
@@ -51,7 +54,7 @@ func main() {
 	cache.InitializeLocalCache()
 
 	server := &http.Server{
-		Addr:         listenAddr,
+		Addr:         ":" + properties.AppProperties.ServerPort,
 		Handler:      tracing(nextRequestID)(logging()(router)),
 		ReadTimeout:  3 * time.Second,
 		WriteTimeout: 5 * time.Second,
@@ -77,10 +80,10 @@ func main() {
 		close(done)
 	}()
 
-	logger.Info("Server is ready to handle requests at %s, elapsed time to start was %v", listenAddr, time.Since(startDate))
+	logger.Info("Server is ready to handle requests at %s, elapsed time to start was %v", properties.AppProperties.ServerPort, time.Since(startDate))
 	atomic.StoreInt32(&healthy, 1)
 	if err := server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
-		logger.Fatal("Could not listen on", listenAddr, err)
+		logger.Fatal("Could not listen on", properties.AppProperties.ServerPort, err)
 	}
 
 	<-done
