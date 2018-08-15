@@ -80,7 +80,7 @@ func TestShouldNotCreateCustomerWhenRepositoryIsUnavaliable(t *testing.T) {
 	assert.Nil(t, createdCustomer)
 
 	if assert.NotNil(t, err) {
-		assert.Contains(t, err.Error(), "Could not complete customer registration.")
+		assert.Contains(t, err.Error(), "Could not complete customer registration")
 	}
 
 	repositoryMock.AssertCalled(t, "InsertCustomer", mock.Anything)

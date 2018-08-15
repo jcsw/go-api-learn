@@ -52,7 +52,7 @@ func CreateCustomer(customerRepository repository.CustomerRepository, newCustome
 	newCustomerEntity := newCustomer.toEntity()
 
 	if err := customerRepository.InsertCustomer(newCustomerEntity); err != nil {
-		return nil, errors.New("Could not complete customer registration.\n" + err.Error())
+		return nil, errors.New("Could not complete customer registration")
 	}
 
 	return makeCustomerByEntity(newCustomerEntity), nil
