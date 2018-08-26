@@ -48,7 +48,7 @@ func (app *App) Initialize(env string) {
 
 	app.server.Get("/health", health())
 	app.server.Get("/monitor", MonitorHandle())
-	app.server.Route("/customer", "GET,POST", CustomersHandle())
+	app.server.Route("/customer", "GET,POST", CustomerHandle)
 }
 
 // Run initializes the application

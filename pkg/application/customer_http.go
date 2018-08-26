@@ -11,25 +11,23 @@ import (
 	"gopkg.in/macaron.v1"
 )
 
-// CustomersHandle function to handle "/customer"
-func CustomersHandle() macaron.Handler {
-	return func(ctx *macaron.Context) {
+// CustomerHandle function to handle "/customer"
+func CustomerHandle(ctx *macaron.Context) {
 
-		if ctx.Req.Method == "POST" {
-			addCustomerHandle(ctx)
+	if ctx.Req.Method == "POST" {
+		addCustomerHandle(ctx)
+		return
+	}
+
+	if ctx.Req.Method == "GET" {
+		name := ctx.Query("name")
+		if name != "" {
+			getCustomerHandle(ctx, name)
 			return
 		}
 
-		if ctx.Req.Method == "GET" {
-			name := ctx.Query("name")
-			if name != "" {
-				getCustomerHandle(ctx, name)
-				return
-			}
-
-			listCustomersHandle(ctx)
-			return
-		}
+		listCustomersHandle(ctx)
+		return
 	}
 }
 
@@ -52,7 +50,7 @@ func addCustomerHandle(ctx *macaron.Context) {
 	customerRepository := repository.Repository{MongoSession: mongoSession}
 	createdCustomer, err := domain.CreateCustomer(&customerRepository, &newCustomer)
 	if err != nil {
-		respondWithError(ctx, http.StatusInternalServerError, "Error to process request")
+		respondWithError(ctx, http.StatusInternalServerError, err.Error())
 		return
 	}
 
