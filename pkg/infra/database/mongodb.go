@@ -18,7 +18,6 @@ var (
 
 // InitializeMongoDBSession initiliaze the mongodb session
 func InitializeMongoDBSession() {
-	setMongoDBStatusDown()
 	mgoSession = createMongoDBSession()
 	go mongoDBSessionMonitor()
 }
@@ -74,7 +73,6 @@ func createMongoDBSession() *mgo.Session {
 
 func mongoDBSessionMonitor() {
 	for {
-		time.Sleep(10 * time.Second)
 
 		if mgoSession == nil || mgoSession.Ping() != nil {
 			setMongoDBStatusDown()
@@ -84,6 +82,8 @@ func mongoDBSessionMonitor() {
 			setMongoDBStatusUp()
 			logger.Info("f=mongoDBSessionMonitor MongoDB session it's alive with servers %v", mgoSession.LiveServers())
 		}
+
+		time.Sleep(30 * time.Second)
 	}
 }
 

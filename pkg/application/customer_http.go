@@ -8,81 +8,41 @@ import (
 	"github.com/jcsw/go-api-learn/pkg/infra/cache/cachestore"
 	"github.com/jcsw/go-api-learn/pkg/infra/database"
 	"github.com/jcsw/go-api-learn/pkg/infra/database/repository"
+	"gopkg.in/macaron.v1"
 )
 
-// CustomerHandle function to handle "/customer"
-func CustomerHandle(w http.ResponseWriter, r *http.Request) {
+// CustomersHandle function to handle "/customer"
+func CustomersHandle() macaron.Handler {
+	return func(ctx *macaron.Context) {
 
-	if r.Method == "POST" {
-		addCustomer(w, r)
-		return
-	}
-
-	if r.Method == "GET" {
-
-		if _, ok := r.URL.Query()["name"]; ok {
-			getCustomer(w, r)
+		if ctx.Req.Method == "POST" {
+			addCustomerHandle(ctx)
 			return
 		}
 
-		listCustomers(w, r)
-		return
-	}
+		if ctx.Req.Method == "GET" {
+			name := ctx.Query("name")
+			if name != "" {
+				getCustomerHandle(ctx, name)
+				return
+			}
 
-	respondWithError(w, http.StatusMethodNotAllowed, "Invalid request method")
+			listCustomersHandle(ctx)
+			return
+		}
+	}
 }
 
-func listCustomers(w http.ResponseWriter, r *http.Request) {
+func addCustomerHandle(ctx *macaron.Context) {
 
-	mongoSession := database.RetrieveMongoDBSession()
-	if mongoSession != nil {
-		defer mongoSession.Close()
-	}
-
-	customerRepository := repository.Repository{MongoSession: mongoSession}
-	customers, err := domain.Customers(&customerRepository)
-	if err != nil {
-		respondWithError(w, http.StatusInternalServerError, err.Error())
-		return
-	}
-
-	respondWithJSON(w, http.StatusOK, customers)
-}
-
-func getCustomer(w http.ResponseWriter, r *http.Request) {
-
-	mongoSession := database.RetrieveMongoDBSession()
-	if mongoSession != nil {
-		defer mongoSession.Close()
-	}
-
-	name, _ := r.URL.Query()["name"]
-
-	customerRepository := repository.Repository{MongoSession: mongoSession}
-	customerCacheStory := cachestore.CacheStore{}
-
-	customer, err := domain.CustomerByName(&customerRepository, &customerCacheStory, name[0])
-	if err != nil {
-		respondWithError(w, http.StatusInternalServerError, err.Error())
-		return
-	}
-
-	if customer == nil {
-		respondWithError(w, http.StatusNotFound, "Customer not found")
-		return
-	}
-
-	respondWithJSON(w, http.StatusOK, customer)
-}
-
-func addCustomer(w http.ResponseWriter, r *http.Request) {
+	reader := ctx.Req.Body().ReadCloser()
+	defer reader.Close()
 
 	var newCustomer domain.Customer
-	if err := json.NewDecoder(r.Body).Decode(&newCustomer); err != nil {
-		respondWithError(w, http.StatusBadRequest, "Invalid request payload")
+	if err := json.NewDecoder(reader).Decode(&newCustomer); err != nil {
+		respondWithError(ctx, http.StatusBadRequest, "Invalid request payload")
 		return
 	}
-	defer r.Body.Close()
 
 	mongoSession := database.RetrieveMongoDBSession()
 	if mongoSession != nil {
@@ -92,9 +52,51 @@ func addCustomer(w http.ResponseWriter, r *http.Request) {
 	customerRepository := repository.Repository{MongoSession: mongoSession}
 	createdCustomer, err := domain.CreateCustomer(&customerRepository, &newCustomer)
 	if err != nil {
-		respondWithError(w, http.StatusInternalServerError, err.Error())
+		respondWithError(ctx, http.StatusInternalServerError, "Error to process request")
 		return
 	}
 
-	respondWithJSON(w, http.StatusOK, createdCustomer)
+	respondWithJSON(ctx, http.StatusOK, createdCustomer)
+}
+
+func listCustomersHandle(ctx *macaron.Context) {
+
+	mongoSession := database.RetrieveMongoDBSession()
+	if mongoSession != nil {
+		defer mongoSession.Close()
+	}
+
+	customerRepository := repository.Repository{MongoSession: mongoSession}
+	customers, err := domain.Customers(&customerRepository)
+	if err != nil {
+		respondWithError(ctx, http.StatusInternalServerError, "Error to process request")
+		return
+	}
+
+	respondWithJSON(ctx, http.StatusOK, customers)
+
+}
+
+func getCustomerHandle(ctx *macaron.Context, customerName string) {
+
+	mongoSession := database.RetrieveMongoDBSession()
+	if mongoSession != nil {
+		defer mongoSession.Close()
+	}
+
+	customerRepository := repository.Repository{MongoSession: mongoSession}
+	customerCacheStory := cachestore.CacheStore{}
+
+	customer, err := domain.CustomerByName(&customerRepository, &customerCacheStory, customerName)
+	if err != nil {
+		respondWithError(ctx, http.StatusInternalServerError, err.Error())
+		return
+	}
+
+	if customer == nil {
+		respondWithError(ctx, http.StatusNotFound, "Customer not found")
+		return
+	}
+
+	respondWithJSON(ctx, http.StatusOK, customer)
 }

@@ -4,6 +4,7 @@ import (
 	"net/http"
 
 	"github.com/jcsw/go-api-learn/pkg/infra/database"
+	"gopkg.in/macaron.v1"
 )
 
 type monitorComponent struct {
@@ -12,24 +13,16 @@ type monitorComponent struct {
 }
 
 // MonitorHandle function to handle "/monitor"
-func MonitorHandle(w http.ResponseWriter, r *http.Request) {
-
-	monitors := []monitorComponent{}
-
-	if r.Method == "GET" {
-		monitors = append(monitors, mongoDBStatus())
-
-		respondWithJSON(w, http.StatusOK, monitors)
-		return
+func MonitorHandle() macaron.Handler {
+	return func(ctx *macaron.Context) {
+		monitors := []monitorComponent{}
+		monitors = append(monitors, getMongoDBStatus())
+		respondWithJSON(ctx, http.StatusOK, monitors)
 	}
-
-	respondWithError(w, http.StatusMethodNotAllowed, "Invalid request method")
 }
 
-func mongoDBStatus() monitorComponent {
-
+func getMongoDBStatus() monitorComponent {
 	mongoDBStatus := monitorComponent{Component: "MongoDB"}
-
 	if database.IsMongoDBSessionAlive() {
 		mongoDBStatus.Status = "OK"
 	} else {

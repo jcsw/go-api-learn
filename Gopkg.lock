@@ -13,8 +13,14 @@
 [[projects]]
   name = "github.com/davecgh/go-spew"
   packages = ["spew"]
-  revision = "346938d642f2ec3594ed81d874461961cd0faa76"
-  version = "v1.1.0"
+  revision = "8991bc29aa16c548c550c7ff78260e27b9ab7c73"
+  version = "v1.1.1"
+
+[[projects]]
+  branch = "master"
+  name = "github.com/go-macaron/inject"
+  packages = ["."]
+  revision = "d8a0b8677191f4380287cfebd08e462217bac7ad"
 
 [[projects]]
   name = "github.com/pmezard/go-difflib"
@@ -38,6 +44,24 @@
   version = "v1.2.2"
 
 [[projects]]
+  branch = "master"
+  name = "golang.org/x/crypto"
+  packages = ["pbkdf2"]
+  revision = "614d502a4dac94afa3a6ce146bd1736da82514c6"
+
+[[projects]]
+  name = "gopkg.in/ini.v1"
+  packages = ["."]
+  revision = "5cf292cae48347c2490ac1a58fe36735fb78df7e"
+  version = "v1.38.2"
+
+[[projects]]
+  name = "gopkg.in/macaron.v1"
+  packages = ["."]
+  revision = "c1be95e6d21e769e44e1ec33cec9da5837861c10"
+  version = "v1.3.1"
+
+[[projects]]
   branch = "v2"
   name = "gopkg.in/mgo.v2"
   packages = [
@@ -47,7 +71,7 @@
     "internal/sasl",
     "internal/scram"
   ]
-  revision = "3f83fa5005286a7fe593b055f0d7771a7dce4655"
+  revision = "9856a29383ce1c59f308dd1cf0363a79b5bef6b5"
 
 [[projects]]
   name = "gopkg.in/yaml.v2"
@@ -58,6 +82,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "d5cf00df48eadf9dd41397cbcad25ceba7df80148fefada2d78fafb7b095ceb7"
+  inputs-digest = "a43a3712feb739ed2fd6095516610a599d6a874d531d25d278ebdb1f099d9f22"
   solver-name = "gps-cdcl"
   solver-version = 1

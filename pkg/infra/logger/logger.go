@@ -7,6 +7,11 @@ import (
 
 var logger = configureLogger()
 
+// GetConfiguredLogger return the configured logger
+func GetConfiguredLogger() *log.Logger {
+	return logger
+}
+
 func configureLogger() *log.Logger {
 	return log.New(os.Stdout, "go-api-learn ", log.LstdFlags)
 }

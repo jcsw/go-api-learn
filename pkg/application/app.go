@@ -1,13 +1,15 @@
 package application
 
 import (
-	"context"
 	"fmt"
 	"net/http"
+	"os"
+	"os/signal"
 	"sync/atomic"
 	"time"
 
 	"github.com/jcsw/go-api-learn/pkg/infra/cache"
+	"gopkg.in/macaron.v1"
 
 	"github.com/jcsw/go-api-learn/pkg/infra/database"
 	"github.com/jcsw/go-api-learn/pkg/infra/logger"
@@ -24,98 +26,91 @@ var healthy int32
 
 // App define the app
 type App struct {
-	server *http.Server
+	server *macaron.Macaron
 }
 
 // Initialize initialize the all components to app
 func (app *App) Initialize(env string) {
-
-	logger.Info("f=Initialize env=%s", env)
+	logger.Info("Server is starting... env=%s", env)
 
 	properties.LoadProperties(env)
 	cache.InitializeLocalCache()
 	database.InitializeMongoDBSession()
 
-	router := http.NewServeMux()
-	router.Handle("/health", health())
-	router.HandleFunc("/monitor", MonitorHandle)
-	router.HandleFunc("/customer", CustomerHandle)
+	app.server = macaron.New()
+	app.server.Map(logger.GetConfiguredLogger())
 
-	app.server = &http.Server{
-		Addr:         ":" + properties.AppProperties.ServerPort,
-		Handler:      tracing()(logging()(router)),
-		ReadTimeout:  3 * time.Second,
-		WriteTimeout: 5 * time.Second,
-		IdleTimeout:  5 * time.Second,
-	}
+	app.server.Use(macaron.Renderer())
+	app.server.Use(macaron.Recovery())
+	app.server.Use(logging())
+
+	app.server.Before(tracing())
+
+	app.server.Get("/health", health())
+	app.server.Get("/monitor", MonitorHandle())
+	app.server.Route("/customer", "GET,POST", CustomersHandle())
 }
 
 // Run initializes the application
 func (app *App) Run() {
 
-	logger.Info("Server is ready to handle requests at port %s", properties.AppProperties.ServerPort)
+	quit := make(chan os.Signal, 1)
+	signal.Notify(quit, os.Interrupt)
+
+	go func() {
+		<-quit
+		app.close()
+		logger.Fatal("Server stopped")
+	}()
+
 	atomic.StoreInt32(&healthy, 1)
-	if err := app.server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
-		logger.Fatal("Could not listen on", properties.AppProperties.ServerPort, err)
-	}
+	app.server.Run(properties.AppProperties.ServerPort)
 }
 
 // Stop stop the application
-func (app *App) Stop() {
-	database.CloseMongoDBSession()
-
+func (app *App) close() {
 	logger.Info("Server is shutting down...")
 	atomic.StoreInt32(&healthy, 0)
-
-	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
-	defer cancel()
-
-	app.server.SetKeepAlivesEnabled(false)
-	if err := app.server.Shutdown(ctx); err != nil {
-		logger.Fatal("Could not gracefully shutdown the server, err=%v", err)
-	}
+	database.CloseMongoDBSession()
 }
 
-func health() http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+func health() macaron.Handler {
+	return func(ctx *macaron.Context) {
 		if atomic.LoadInt32(&healthy) == 1 {
-			w.WriteHeader(http.StatusNoContent)
+			ctx.Resp.WriteHeader(http.StatusOK)
 			return
 		}
-		w.WriteHeader(http.StatusServiceUnavailable)
-	})
-}
-
-func logging() func(http.Handler) http.Handler {
-	return func(next http.Handler) http.Handler {
-		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			start := time.Now()
-			next.ServeHTTP(w, r)
-			requestID, ok := r.Context().Value(requestIDKey).(string)
-			if !ok {
-				requestID = "unknown"
-			}
-			logger.Info("requestID=%s, method=%s path=%s remoteAddr=%s elapsedTime=%v",
-				requestID, r.Method, r.URL.Path, r.RemoteAddr, time.Since(start))
-		})
+		ctx.Resp.WriteHeader(http.StatusInternalServerError)
 	}
 }
 
-func tracing() func(http.Handler) http.Handler {
-	return func(next http.Handler) http.Handler {
-		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			requestID := r.Header.Get("X-Request-Id")
-			if requestID == "" {
-				requestID = generateRequestID()
-			}
-			ctx := context.WithValue(r.Context(), requestIDKey, requestID)
-			w.Header().Set("X-Request-Id", requestID)
+func logging() macaron.Handler {
+	return func(ctx *macaron.Context) {
+		start := time.Now()
 
-			next.ServeHTTP(w, r.WithContext(ctx))
-		})
+		ctx.Next()
+
+		requestID := ctx.Resp.Header().Get("X-Request-Id")
+		if requestID == "" {
+			requestID = "unknown"
+		}
+
+		logger.Info("requestID=%s, method=%s path=%s remoteAddr=%s statusCode=%d elapsedTime=%v",
+			requestID, ctx.Req.Method, ctx.Req.RequestURI, ctx.RemoteAddr(), ctx.Resp.Status(), time.Since(start))
 	}
 }
 
-func generateRequestID() string {
+func tracing() macaron.BeforeHandler {
+	return func(w http.ResponseWriter, r *http.Request) bool {
+		requestID := r.Header.Get("X-Request-Id")
+		if requestID == "" {
+			requestID = newRequestID()
+		}
+		w.Header().Set("X-Request-Id", requestID)
+		return false
+	}
+}
+
+func newRequestID() string {
 	return fmt.Sprintf("%d", time.Now().UnixNano())
 }

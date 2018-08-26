@@ -11,7 +11,7 @@ import (
 
 // Properties define the properties values
 type Properties struct {
-	ServerPort string            `yaml:"serverPort"`
+	ServerPort int               `yaml:"serverPort"`
 	MongoDB    MongoDBProperties `yaml:"mongodb"`
 }
 
