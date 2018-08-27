@@ -13,12 +13,10 @@ type monitorComponent struct {
 }
 
 // MonitorHandle function to handle "/monitor"
-func MonitorHandle() macaron.Handler {
-	return func(ctx *macaron.Context) {
-		monitors := []monitorComponent{}
-		monitors = append(monitors, getMongoDBStatus())
-		respondWithJSON(ctx, http.StatusOK, monitors)
-	}
+func MonitorHandle(ctx *macaron.Context) {
+	monitors := []monitorComponent{}
+	monitors = append(monitors, getMongoDBStatus())
+	respondWithJSON(ctx, http.StatusOK, monitors)
 }
 
 func getMongoDBStatus() monitorComponent {

@@ -36,3 +36,27 @@ func TestShoudReturnErrorOnPostCustomerWhenDatabaseIsOff(t *testing.T) {
 	assert.Equal(expectedStatusCode, resp.Code, description)
 	assert.Equal(expectedBody, string(resp.Body.Bytes()), description)
 }
+
+func TestShoudReturnErrorOnGetCustomersWhenDatabaseIsOff(t *testing.T) {
+
+	assert := assert.New(t)
+
+	description := "could not list customers"
+
+	expectedStatusCode := 500
+	expectedBody := `{"error":"Error to process request"}`
+
+	req, err := http.NewRequest("GET", "/customer", nil)
+	assert.NoError(err)
+
+	m := macaron.New()
+	m.Use(macaron.Renderer())
+	m.Route("/customer", "GET,POST", application.CustomerHandle)
+
+	resp := httptest.NewRecorder()
+
+	m.ServeHTTP(resp, req)
+
+	assert.Equal(expectedStatusCode, resp.Code, description)
+	assert.Equal(expectedBody, string(resp.Body.Bytes()), description)
+}

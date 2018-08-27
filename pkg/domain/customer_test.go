@@ -18,7 +18,8 @@ func TestShouldCreateNewCustomer(t *testing.T) {
 	repositoryMock := &RepositoryMock{}
 	repositoryMock.On("InsertCustomer", newCustomer.toEntity()).Return(nil)
 
-	createdCustomer, err := CreateCustomer(repositoryMock, &newCustomer)
+	cAggregate := CustomerAggregate{CustomerRepository: repositoryMock}
+	createdCustomer, err := cAggregate.CreateCustomer(&newCustomer)
 
 	assert.Nil(t, err)
 
@@ -38,7 +39,8 @@ func TestShouldNotCreateCustomerWhenNameIsEmpty(t *testing.T) {
 	repositoryMock := &RepositoryMock{}
 	repositoryMock.On("InsertCustomer", mock.Anything).Return(nil)
 
-	createdCustomer, err := CreateCustomer(repositoryMock, &newCustomer)
+	cAggregate := CustomerAggregate{CustomerRepository: repositoryMock}
+	createdCustomer, err := cAggregate.CreateCustomer(&newCustomer)
 
 	assert.Nil(t, createdCustomer)
 
@@ -56,7 +58,8 @@ func TestShouldNotCreateCustomerWhenCityIsEmpty(t *testing.T) {
 	repositoryMock := &RepositoryMock{}
 	repositoryMock.On("InsertCustomer", mock.Anything).Return(nil)
 
-	createdCustomer, err := CreateCustomer(repositoryMock, &newCustomer)
+	cAggregate := CustomerAggregate{CustomerRepository: repositoryMock}
+	createdCustomer, err := cAggregate.CreateCustomer(&newCustomer)
 
 	assert.Nil(t, createdCustomer)
 
@@ -75,7 +78,8 @@ func TestShouldNotCreateCustomerWhenRepositoryIsUnavaliable(t *testing.T) {
 	repositoryMock.On("InsertCustomer", newCustomer.toEntity()).
 		Return(errors.New("Error"))
 
-	createdCustomer, err := CreateCustomer(repositoryMock, &newCustomer)
+	cAggregate := CustomerAggregate{CustomerRepository: repositoryMock}
+	createdCustomer, err := cAggregate.CreateCustomer(&newCustomer)
 
 	assert.Nil(t, createdCustomer)
 
@@ -98,7 +102,8 @@ func TestShouldReturnCustomerWhenNameExistsInDatabase(t *testing.T) {
 	cacheStoreMock.On("RetriveCustomerEntityInCache", customerName).Return(nil)
 	cacheStoreMock.On("PersistCustomerEntityInCache", &customerInDataBase)
 
-	customer, err := CustomerByName(repositoryMock, cacheStoreMock, customerName)
+	cAggregate := CustomerAggregate{CustomerRepository: repositoryMock, CustomerCacheStore: cacheStoreMock}
+	customer, err := cAggregate.CustomerByName(customerName)
 
 	assert.Nil(t, err)
 
@@ -125,7 +130,8 @@ func TestShouldReturnCustomerWhenNameExistsInCache(t *testing.T) {
 	customerInCache := repository.CustomerEntity{ID: bson.NewObjectId(), Name: customerName, City: "São Paulo"}
 	cacheStoreMock.On("RetriveCustomerEntityInCache", customerName).Return(&customerInCache)
 
-	customer, err := CustomerByName(repositoryMock, cacheStoreMock, customerName)
+	cAggregate := CustomerAggregate{CustomerRepository: repositoryMock, CustomerCacheStore: cacheStoreMock}
+	customer, err := cAggregate.CustomerByName(customerName)
 
 	assert.Nil(t, err)
 
@@ -151,7 +157,8 @@ func TestShouldReturnNilWhenNameNotExistsInCacheAndDatabase(t *testing.T) {
 	cacheStoreMock := &CacheStoreMock{}
 	cacheStoreMock.On("RetriveCustomerEntityInCache", customerName).Return(nil)
 
-	customer, err := CustomerByName(repositoryMock, cacheStoreMock, customerName)
+	cAggregate := CustomerAggregate{CustomerRepository: repositoryMock, CustomerCacheStore: cacheStoreMock}
+	customer, err := cAggregate.CustomerByName(customerName)
 
 	assert.Nil(t, err)
 	assert.Nil(t, customer)
@@ -172,7 +179,8 @@ func TestShouldReturnErrorWhenNotHasInCacheAndRepositoryIsUnavaliable(t *testing
 	cacheStoreMock := &CacheStoreMock{}
 	cacheStoreMock.On("RetriveCustomerEntityInCache", customerName).Return(nil)
 
-	customer, err := CustomerByName(repositoryMock, cacheStoreMock, customerName)
+	cAggregate := CustomerAggregate{CustomerRepository: repositoryMock, CustomerCacheStore: cacheStoreMock}
+	customer, err := cAggregate.CustomerByName(customerName)
 
 	assert.Nil(t, customer)
 
@@ -192,7 +200,8 @@ func TestShouldReturnCustomersWhenExistsOneCustomer(t *testing.T) {
 	customerAmanda := &repository.CustomerEntity{ID: bson.NewObjectId(), Name: "Amanda", City: "São Paulo"}
 	repositoryMock.On("FindAllCustomers").Return([]*repository.CustomerEntity{customerAmanda}, nil)
 
-	customers, err := Customers(repositoryMock)
+	cAggregate := CustomerAggregate{CustomerRepository: repositoryMock}
+	customers, err := cAggregate.Customers()
 
 	assert.Nil(t, err)
 
@@ -214,7 +223,8 @@ func TestShouldReturnCustomersWhenExistsTwoCustomer(t *testing.T) {
 	customerMarcos := &repository.CustomerEntity{ID: bson.NewObjectId(), Name: "Marcos", City: "Recife"}
 	repositoryMock.On("FindAllCustomers").Return([]*repository.CustomerEntity{customerAmanda, customerMarcos}, nil)
 
-	customers, err := Customers(repositoryMock)
+	cAggregate := CustomerAggregate{CustomerRepository: repositoryMock}
+	customers, err := cAggregate.Customers()
 
 	assert.Nil(t, err)
 
@@ -238,7 +248,8 @@ func TestShouldReturnEmptyCustomersWhenNotExists(t *testing.T) {
 	repositoryMock := &RepositoryMock{}
 	repositoryMock.On("FindAllCustomers").Return([]*repository.CustomerEntity{}, nil)
 
-	customers, err := Customers(repositoryMock)
+	cAggregate := CustomerAggregate{CustomerRepository: repositoryMock}
+	customers, err := cAggregate.Customers()
 
 	assert.Nil(t, err)
 	assert.Empty(t, customers)
@@ -251,7 +262,8 @@ func TestShouldReturnErrorWhenReturnError(t *testing.T) {
 	repositoryMock := &RepositoryMock{}
 	repositoryMock.On("FindAllCustomers").Return(nil, errors.New("Error"))
 
-	customers, err := Customers(repositoryMock)
+	cAggregate := CustomerAggregate{CustomerRepository: repositoryMock}
+	customers, err := cAggregate.Customers()
 
 	assert.Empty(t, customers)
 

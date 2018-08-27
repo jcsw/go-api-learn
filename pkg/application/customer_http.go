@@ -48,7 +48,9 @@ func addCustomerHandle(ctx *macaron.Context) {
 	}
 
 	customerRepository := repository.Repository{MongoSession: mongoSession}
-	createdCustomer, err := domain.CreateCustomer(&customerRepository, &newCustomer)
+	cAggregate := domain.CustomerAggregate{CustomerRepository: &customerRepository}
+
+	createdCustomer, err := cAggregate.CreateCustomer(&newCustomer)
 	if err != nil {
 		respondWithError(ctx, http.StatusInternalServerError, err.Error())
 		return
@@ -65,7 +67,9 @@ func listCustomersHandle(ctx *macaron.Context) {
 	}
 
 	customerRepository := repository.Repository{MongoSession: mongoSession}
-	customers, err := domain.Customers(&customerRepository)
+	cAggregate := domain.CustomerAggregate{CustomerRepository: &customerRepository}
+
+	customers, err := cAggregate.Customers()
 	if err != nil {
 		respondWithError(ctx, http.StatusInternalServerError, "Error to process request")
 		return
@@ -84,8 +88,9 @@ func getCustomerHandle(ctx *macaron.Context, customerName string) {
 
 	customerRepository := repository.Repository{MongoSession: mongoSession}
 	customerCacheStory := cachestore.CacheStore{}
+	cAggregate := domain.CustomerAggregate{CustomerRepository: &customerRepository, CustomerCacheStore: customerCacheStory}
 
-	customer, err := domain.CustomerByName(&customerRepository, &customerCacheStory, customerName)
+	customer, err := cAggregate.CustomerByName(customerName)
 	if err != nil {
 		respondWithError(ctx, http.StatusInternalServerError, err.Error())
 		return

@@ -16,20 +16,14 @@ type Customer struct {
 }
 
 func (customer *Customer) toEntity() *repository.CustomerEntity {
-
 	customerEntity := repository.CustomerEntity{
 		Name: customer.Name,
 		City: customer.City,
 	}
-
 	return &customerEntity
 }
 
-func makeCustomerByEntity(customerEntity *repository.CustomerEntity) *Customer {
-	return &Customer{ID: customerEntity.ID.Hex(), Name: customerEntity.Name, City: customerEntity.City}
-}
-
-func validateCustomer(customer *Customer) error {
+func (customer *Customer) validate() error {
 
 	if len(strings.TrimSpace(customer.Name)) == 0 {
 		return errors.New("Invalid value 'name'")
@@ -42,16 +36,29 @@ func validateCustomer(customer *Customer) error {
 	return nil
 }
 
-// CreateCustomer function to create a new customer
-func CreateCustomer(customerRepository repository.CustomerRepository, newCustomer *Customer) (*Customer, error) {
+// CustomerService provides customer services
+type CustomerService interface {
+	CustomerByName(name string) (*Customer, error)
+	Customers() ([]*Customer, error)
+	CreateCustomer(newCustomer *Customer) (*Customer, error)
+}
 
-	if err := validateCustomer(newCustomer); err != nil {
+// CustomerAggregate aggregate
+type CustomerAggregate struct {
+	CustomerRepository repository.CustomerRepository
+	CustomerCacheStore cachestore.CustomerCacheStore
+}
+
+// CreateCustomer function to create a new customer
+func (cAggregate *CustomerAggregate) CreateCustomer(newCustomer *Customer) (*Customer, error) {
+
+	if err := newCustomer.validate(); err != nil {
 		return nil, err
 	}
 
 	newCustomerEntity := newCustomer.toEntity()
 
-	if err := customerRepository.InsertCustomer(newCustomerEntity); err != nil {
+	if err := cAggregate.CustomerRepository.InsertCustomer(newCustomerEntity); err != nil {
 		return nil, errors.New("Could not complete customer registration")
 	}
 
@@ -59,9 +66,9 @@ func CreateCustomer(customerRepository repository.CustomerRepository, newCustome
 }
 
 // Customers return all customers
-func Customers(customerRepository repository.CustomerRepository) ([]*Customer, error) {
+func (cAggregate *CustomerAggregate) Customers() ([]*Customer, error) {
 
-	customersEntity, err := customerRepository.FindAllCustomers()
+	customersEntity, err := cAggregate.CustomerRepository.FindAllCustomers()
 	if err != nil {
 		return nil, errors.New("Could not find customers.\n" + err.Error())
 	}
@@ -75,14 +82,14 @@ func Customers(customerRepository repository.CustomerRepository) ([]*Customer, e
 }
 
 // CustomerByName return customer by name
-func CustomerByName(customerRepository repository.CustomerRepository, customerCacheStore cachestore.CustomerCacheStore, name string) (*Customer, error) {
+func (cAggregate *CustomerAggregate) CustomerByName(name string) (*Customer, error) {
 
-	customerEntity := customerCacheStore.RetriveCustomerEntityInCache(name)
+	customerEntity := cAggregate.CustomerCacheStore.RetriveCustomerEntityInCache(name)
 	if customerEntity != nil {
 		return makeCustomerByEntity(customerEntity), nil
 	}
 
-	customerEntity, err := customerRepository.FindCustomerByName(name)
+	customerEntity, err := cAggregate.CustomerRepository.FindCustomerByName(name)
 	if err != nil {
 		return nil, errors.New("Could not find customer.\n" + err.Error())
 	}
@@ -91,7 +98,11 @@ func CustomerByName(customerRepository repository.CustomerRepository, customerCa
 		return nil, nil
 	}
 
-	customerCacheStore.PersistCustomerEntityInCache(customerEntity)
+	cAggregate.CustomerCacheStore.PersistCustomerEntityInCache(customerEntity)
 
 	return makeCustomerByEntity(customerEntity), nil
+}
+
+func makeCustomerByEntity(customerEntity *repository.CustomerEntity) *Customer {
+	return &Customer{ID: customerEntity.ID.Hex(), Name: customerEntity.Name, City: customerEntity.City}
 }
