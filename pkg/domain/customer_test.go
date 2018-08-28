@@ -84,7 +84,7 @@ func TestShouldNotCreateCustomerWhenRepositoryIsUnavaliable(t *testing.T) {
 	assert.Nil(t, createdCustomer)
 
 	if assert.NotNil(t, err) {
-		assert.Contains(t, err.Error(), "Could not complete customer registration")
+		assert.Contains(t, err.Error(), "could not complete customer registration")
 	}
 
 	repositoryMock.AssertCalled(t, "InsertCustomer", mock.Anything)
@@ -185,7 +185,7 @@ func TestShouldReturnErrorWhenNotHasInCacheAndRepositoryIsUnavaliable(t *testing
 	assert.Nil(t, customer)
 
 	if assert.NotNil(t, err) {
-		assert.Contains(t, err.Error(), "Could not find customer.")
+		assert.Contains(t, err.Error(), "could not find customer")
 	}
 
 	repositoryMock.AssertCalled(t, "FindCustomerByName", customerName)
@@ -268,7 +268,7 @@ func TestShouldReturnErrorWhenReturnError(t *testing.T) {
 	assert.Empty(t, customers)
 
 	if assert.NotNil(t, err) {
-		assert.Contains(t, err.Error(), "Could not find customers.")
+		assert.Contains(t, err.Error(), "could not find customers")
 	}
 }
 

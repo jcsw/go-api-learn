@@ -36,13 +36,6 @@ func (customer *Customer) validate() error {
 	return nil
 }
 
-// CustomerService provides customer services
-type CustomerService interface {
-	CustomerByName(name string) (*Customer, error)
-	Customers() ([]*Customer, error)
-	CreateCustomer(newCustomer *Customer) (*Customer, error)
-}
-
 // CustomerAggregate aggregate
 type CustomerAggregate struct {
 	CustomerRepository repository.CustomerRepository
@@ -59,7 +52,7 @@ func (cAggregate *CustomerAggregate) CreateCustomer(newCustomer *Customer) (*Cus
 	newCustomerEntity := newCustomer.toEntity()
 
 	if err := cAggregate.CustomerRepository.InsertCustomer(newCustomerEntity); err != nil {
-		return nil, errors.New("Could not complete customer registration")
+		return nil, errors.New("could not complete customer registration")
 	}
 
 	return makeCustomerByEntity(newCustomerEntity), nil
@@ -70,7 +63,7 @@ func (cAggregate *CustomerAggregate) Customers() ([]*Customer, error) {
 
 	customersEntity, err := cAggregate.CustomerRepository.FindAllCustomers()
 	if err != nil {
-		return nil, errors.New("Could not find customers.\n" + err.Error())
+		return nil, errors.New("could not find customers\n" + err.Error())
 	}
 
 	customers := make([]*Customer, len(customersEntity), len(customersEntity))
@@ -91,7 +84,7 @@ func (cAggregate *CustomerAggregate) CustomerByName(name string) (*Customer, err
 
 	customerEntity, err := cAggregate.CustomerRepository.FindCustomerByName(name)
 	if err != nil {
-		return nil, errors.New("Could not find customer.\n" + err.Error())
+		return nil, errors.New("could not find customer\n" + err.Error())
 	}
 
 	if customerEntity == nil {

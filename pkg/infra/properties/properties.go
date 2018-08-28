@@ -32,15 +32,15 @@ var AppProperties Properties
 func LoadProperties(env string) {
 
 	pwd, _ := os.Getwd()
-	fileProperties, errReadFile := ioutil.ReadFile(pwd + "/properties/" + env + ".yaml")
-	if errReadFile != nil {
-		logger.Fatal("f=LoadProperties errReadFile=%v", errReadFile)
+	fileProperties, err := ioutil.ReadFile(pwd + "/properties/" + env + ".yaml")
+	if err != nil {
+		logger.Fatal("p=properties f=LoadProperties \n%v", err)
 	}
 
-	errUnmarshalStrict := yaml.UnmarshalStrict(fileProperties, &AppProperties)
-	if errUnmarshalStrict != nil {
-		logger.Fatal("f=LoadProperties errUnmarshalStrict=%v", errUnmarshalStrict)
+	err = yaml.UnmarshalStrict(fileProperties, &AppProperties)
+	if err != nil {
+		logger.Fatal("p=properties f=LoadProperties \n%v", err)
 	}
 
-	logger.Info("f=LoadProperties %v", AppProperties)
+	logger.Info("p=properties f=LoadProperties \n%+v", AppProperties)
 }

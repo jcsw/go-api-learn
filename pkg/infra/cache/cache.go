@@ -10,10 +10,9 @@ import (
 var bCache *bigcache.BigCache
 
 func configureBigCache() *bigcache.BigCache {
-	bigcache, initErr := bigcache.NewBigCache(bigcache.DefaultConfig(10 * time.Minute))
-
-	if initErr != nil {
-		logger.Error("Could not create BigCache", initErr)
+	bigcache, err := bigcache.NewBigCache(bigcache.DefaultConfig(10 * time.Minute))
+	if err != nil {
+		logger.Error("p=cache f=configureBigCache 'could not create BigCache' \n%v", err)
 	}
 
 	return bigcache
@@ -27,9 +26,8 @@ func InitializeLocalCache() {
 
 func bigCacheMonitor() {
 	for {
-		time.Sleep(60 * time.Second)
 		if bCache != nil {
-			logger.Info("f=bigCacheMonitor BigCache stats: collisions=%v delHits=%v delMisses=%v hits=%v misses=%v",
+			logger.Info("p=cache f=bigCacheMonitor BigCache stats: collisions=%v delHits=%v delMisses=%v hits=%v misses=%v",
 				bCache.Stats().Collisions,
 				bCache.Stats().DelHits,
 				bCache.Stats().DelMisses,
@@ -38,6 +36,7 @@ func bigCacheMonitor() {
 		} else {
 			bCache = configureBigCache()
 		}
+		time.Sleep(60 * time.Second)
 	}
 }
 
@@ -45,19 +44,19 @@ func bigCacheMonitor() {
 func PullInLocalCache(key string) []byte {
 	value, err := bCache.Get(key)
 	if err != nil {
-		logger.Info("f=PullInLocalCache key=%s err=%v", key, err)
+		logger.Info("p=cache f=PullInLocalCache key=%s \n%v", key, err)
 		return nil
 	}
 
-	logger.Info("f=PullInLocalCache key=%s value=%s", key, value)
+	logger.Info("p=cache f=PullInLocalCache key=%s value=%s", key, value)
 	return value
 }
 
 // PutInLocalCache - Put value in local cache
 func PutInLocalCache(key string, value []byte) {
-	logger.Info("f=PutInLocalCache key=%s value=%s", key, value)
+	logger.Info("p=cache f=PutInLocalCache key=%s value=%s", key, value)
 
 	if err := bCache.Set(key, value); err != nil {
-		logger.Error("f=PutInLocalCache err=%s", err)
+		logger.Error("p=cache f=PutInLocalCache \n%s", err)
 	}
 }

@@ -33,7 +33,7 @@ func RetrieveMongoDBSession() *mgo.Session {
 		return mgoSession.Clone()
 	}
 
-	logger.Warn("f=RetrieveMongoDBSession MongoDB session is not active")
+	logger.Warn("p=database f=RetrieveMongoDBSession 'mongodb session is not active'")
 	return nil
 }
 
@@ -41,7 +41,7 @@ func RetrieveMongoDBSession() *mgo.Session {
 func CloseMongoDBSession() {
 	if mgoSession != nil {
 		mgoSession.Close()
-		logger.Info("f=CloseMongoDBSession MongoDB session it's closed")
+		logger.Info("p=database f=CloseMongoDBSession 'mongodb session it's closed'")
 	}
 }
 
@@ -57,13 +57,13 @@ func createMongoDBSession() *mgo.Session {
 	})
 
 	if err != nil {
-		logger.Error("f=createMongoDBSession Could not create mongodb session, err=%v", err)
+		logger.Error("p=database f=createMongoDBSession 'could not create mongodb session' \n%v", err)
 		return nil
 	}
 
 	session.SetMode(mgo.Monotonic, true)
 
-	logger.Info("f=createMongoDBSession MongoDB session created with servers %v", session.LiveServers())
+	logger.Info("p=database f=createMongoDBSession 'mongodb session created with servers' %v", session.LiveServers())
 	setMongoDBStatusUp()
 
 	repository.EnsureCustomerIndex(session)
@@ -76,11 +76,11 @@ func mongoDBSessionMonitor() {
 
 		if mgoSession == nil || mgoSession.Ping() != nil {
 			setMongoDBStatusDown()
-			logger.Warn("f=mongoDBSessionMonitor MongoDB session is not active, trying to reconnect")
+			logger.Warn("p=database f=mongoDBSessionMonitor 'mongodb session is not active, trying to reconnect'")
 			mgoSession = createMongoDBSession()
 		} else {
 			setMongoDBStatusUp()
-			logger.Info("f=mongoDBSessionMonitor MongoDB session it's alive with servers %v", mgoSession.LiveServers())
+			logger.Info("p=database f=mongoDBSessionMonitor 'mongodb session it's alive with servers %v'", mgoSession.LiveServers())
 		}
 
 		time.Sleep(30 * time.Second)

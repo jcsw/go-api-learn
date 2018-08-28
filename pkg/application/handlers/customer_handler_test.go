@@ -1,4 +1,4 @@
-package application_test
+package handlers_test
 
 import (
 	"bytes"
@@ -6,9 +6,10 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/jcsw/go-api-learn/pkg/application"
 	"github.com/stretchr/testify/assert"
 	"gopkg.in/macaron.v1"
+
+	"github.com/jcsw/go-api-learn/pkg/application/handlers"
 )
 
 func TestShoudReturnErrorOnPostCustomerWhenDatabaseIsOff(t *testing.T) {
@@ -18,7 +19,7 @@ func TestShoudReturnErrorOnPostCustomerWhenDatabaseIsOff(t *testing.T) {
 	description := "could not create customer"
 
 	expectedStatusCode := 500
-	expectedBody := `{"error":"Could not complete customer registration"}`
+	expectedBody := `{"error":"could not complete customer registration"}`
 
 	payload := []byte(`{"name":"Fernanda Lima","city":"Limeira"}`)
 
@@ -27,7 +28,7 @@ func TestShoudReturnErrorOnPostCustomerWhenDatabaseIsOff(t *testing.T) {
 
 	m := macaron.New()
 	m.Use(macaron.Renderer())
-	m.Route("/customer", "GET,POST", application.CustomerHandle)
+	m.Route("/customer", "GET,POST", handlers.CustomerHandler)
 
 	resp := httptest.NewRecorder()
 
@@ -51,7 +52,7 @@ func TestShoudReturnErrorOnGetCustomersWhenDatabaseIsOff(t *testing.T) {
 
 	m := macaron.New()
 	m.Use(macaron.Renderer())
-	m.Route("/customer", "GET,POST", application.CustomerHandle)
+	m.Route("/customer", "GET,POST", handlers.CustomerHandler)
 
 	resp := httptest.NewRecorder()
 

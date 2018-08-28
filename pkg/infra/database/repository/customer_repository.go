@@ -48,77 +48,75 @@ func EnsureCustomerIndex(mongoSession *mgo.Session) {
 
 	err := mongoSession.DB(databaseName).C(collectionName).EnsureIndex(index)
 	if err != nil {
-		logger.Error("f=EnsureCustomerIndex Could not create index, err=%v", err)
+		logger.Error("p=repository f=EnsureCustomerIndex 'could not create index' \n%v", err)
 		return
 	}
 
-	logger.Info("f=EnsureCustomerIndex Index created")
+	logger.Info("p=repository f=EnsureCustomerIndex 'index created'")
 }
 
-func (repository *Repository) customerCollection() *mgo.Collection {
-
+func (repository *Repository) customerCollection() (*mgo.Collection, error) {
 	if repository.MongoSession == nil {
-		return nil
+		return nil, errors.New("could not communicate with database")
 	}
-
-	return repository.MongoSession.DB(databaseName).C(collectionName)
+	return repository.MongoSession.DB(databaseName).C(collectionName), nil
 }
 
 // InsertCustomer function to persist customer
 func (repository *Repository) InsertCustomer(newCustomerEntity *CustomerEntity) error {
 
-	collection := repository.customerCollection()
-	if collection == nil {
-		logger.Error("f=InsertCustomer newCustomerEntity=%v label=couldNotCommunicateWithDatabase", newCustomerEntity)
-		return errors.New("Could not communicate with database")
+	collection, err := repository.customerCollection()
+	if err != nil {
+		logger.Error("p=repository f=InsertCustomer newCustomerEntity=%+v \n%v", newCustomerEntity, err)
+		return err
 	}
 
 	newCustomerEntity.ID = bson.NewObjectId()
 	if err := collection.Insert(&newCustomerEntity); err != nil {
-		logger.Error("f=InsertCustomer newCustomerEntity=%v err=%v", newCustomerEntity, err)
+		logger.Error("p=repository f=InsertCustomer newCustomerEntity=%+v \n%v", newCustomerEntity, err)
 		return err
 	}
 
-	logger.Info("f=InsertCustomer newCustomerEntity=%v", newCustomerEntity)
+	logger.Info("p=repository f=InsertCustomer newCustomerEntity=%+v", newCustomerEntity)
 	return nil
 }
 
 // FindAllCustomers function to find all customers
 func (repository *Repository) FindAllCustomers() ([]*CustomerEntity, error) {
 
-	collection := repository.customerCollection()
-	if collection == nil {
-		logger.Error("f=FindAllCustomers label=couldNotCommunicateWithDatabase")
-		return nil, errors.New("Could not communicate with database")
-	}
-
-	customers := []*CustomerEntity{}
-	err := collection.Find(nil).All(&customers)
+	collection, err := repository.customerCollection()
 	if err != nil {
-		logger.Error("f=FindAllCustomers err=%v", err)
+		logger.Error("p=repository f=FindAllCustomers \n%v", err)
 		return nil, err
 	}
 
-	logger.Info("f=FindAllCustomers length=%d", len(customers))
+	customers := []*CustomerEntity{}
+	err = collection.Find(nil).All(&customers)
+	if err != nil {
+		logger.Error("p=repository f=FindAllCustomers \n%v", err)
+		return nil, err
+	}
+
+	logger.Info("p=repository f=FindAllCustomers length=%d", len(customers))
 	return customers, nil
 }
 
 // FindCustomerByName function to find customer by name
 func (repository *Repository) FindCustomerByName(name string) (*CustomerEntity, error) {
 
-	collection := repository.customerCollection()
+	collection, err := repository.customerCollection()
 	if collection == nil {
-		logger.Error("f=FindCustomerByName name=%v label=couldNotCommunicateWithDatabase", name)
-		return nil, errors.New("Could not communicate with database")
-	}
-
-	customer := CustomerEntity{}
-	err := collection.Find(bson.M{"name": name}).One(&customer)
-	if err != nil {
-		logger.Error("f=FindCustomerByName name=%s err=%v", name, err)
+		logger.Error("p=repository f=FindCustomerByName name=%s \n%v", name, err)
 		return nil, err
 	}
 
-	logger.Info("f=FindCustomerByName customer=%v", customer)
+	customer := CustomerEntity{}
+	err = collection.Find(bson.M{"name": name}).One(&customer)
+	if err != nil {
+		logger.Error("p=repository f=FindCustomerByName name=%s \n%v", name, err)
+		return nil, err
+	}
+
+	logger.Info("p=repository f=FindCustomerByName customer=%+v", customer)
 	return &customer, err
 }

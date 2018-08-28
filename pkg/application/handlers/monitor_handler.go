@@ -1,4 +1,4 @@
-package application
+package handlers
 
 import (
 	"net/http"
@@ -12,8 +12,8 @@ type monitorComponent struct {
 	Status    string `json:"status"`
 }
 
-// MonitorHandle function to handle "/monitor"
-func MonitorHandle(ctx *macaron.Context) {
+// MonitorHandler function to handle "/monitor"
+func MonitorHandler(ctx *macaron.Context) {
 	monitors := []monitorComponent{}
 	monitors = append(monitors, getMongoDBStatus())
 	respondWithJSON(ctx, http.StatusOK, monitors)

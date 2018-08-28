@@ -10,6 +10,7 @@ import (
 
 	"gopkg.in/macaron.v1"
 
+	"github.com/jcsw/go-api-learn/pkg/application/handlers"
 	"github.com/jcsw/go-api-learn/pkg/infra/cache"
 	"github.com/jcsw/go-api-learn/pkg/infra/database"
 	"github.com/jcsw/go-api-learn/pkg/infra/logger"
@@ -31,7 +32,7 @@ type App struct {
 
 // Initialize initialize the all components to app
 func (app *App) Initialize(env string) {
-	logger.Info("Server is starting... env=%s", env)
+	logger.Info("p=application f=Initialize env=%s", env)
 
 	properties.LoadProperties(env)
 	cache.InitializeLocalCache()
@@ -48,21 +49,21 @@ func (app *App) Initialize(env string) {
 	app.server.Before(tracing)
 
 	app.server.Get("/health", health)
-	app.server.Get("/monitor", MonitorHandle)
+	app.server.Get("/monitor", handlers.MonitorHandler)
 
-	app.server.Route("/customer", "GET,POST", CustomerHandle)
+	app.server.Route("/customer", "GET,POST", handlers.CustomerHandler)
 }
 
-// Run initializes the application
-func (app *App) Run() {
+// Start initializes the application
+func (app *App) Start() {
+	logger.Info("p=application f=Start")
 
 	quit := make(chan os.Signal, 1)
 	signal.Notify(quit, os.Interrupt)
 
 	go func() {
 		<-quit
-		app.close()
-		logger.Fatal("Server stopped")
+		app.stop()
 	}()
 
 	atomic.StoreInt32(&healthy, 1)
@@ -70,10 +71,10 @@ func (app *App) Run() {
 }
 
 // Stop stop the application
-func (app *App) close() {
-	logger.Info("Server is shutting down...")
+func (app *App) stop() {
 	atomic.StoreInt32(&healthy, 0)
 	database.CloseMongoDBSession()
+	logger.Fatal("p=application f=stop")
 }
 
 func health(ctx *macaron.Context) {

@@ -14,5 +14,5 @@ func main() {
 
 	app := application.App{}
 	app.Initialize(env)
-	app.Run()
+	app.Start()
 }
