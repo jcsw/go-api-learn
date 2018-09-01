@@ -38,8 +38,8 @@ func (customer *Customer) validate() error {
 
 // CustomerAggregate aggregate
 type CustomerAggregate struct {
-	CustomerRepository repository.CustomerRepository
-	CustomerCacheStore cachestore.CustomerCacheStore
+	Repository repository.CustomerRepository
+	CacheStore cachestore.CustomerCacheStore
 }
 
 // CreateCustomer function to create a new customer
@@ -50,8 +50,7 @@ func (cAggregate *CustomerAggregate) CreateCustomer(newCustomer *Customer) (*Cus
 	}
 
 	newCustomerEntity := newCustomer.toEntity()
-
-	if err := cAggregate.CustomerRepository.InsertCustomer(newCustomerEntity); err != nil {
+	if err := cAggregate.Repository.InsertCustomer(newCustomerEntity); err != nil {
 		return nil, errors.New("could not complete customer registration")
 	}
 
@@ -61,7 +60,7 @@ func (cAggregate *CustomerAggregate) CreateCustomer(newCustomer *Customer) (*Cus
 // Customers return all customers
 func (cAggregate *CustomerAggregate) Customers() ([]*Customer, error) {
 
-	customersEntity, err := cAggregate.CustomerRepository.FindAllCustomers()
+	customersEntity, err := cAggregate.Repository.FindAllCustomers()
 	if err != nil {
 		return nil, errors.New("could not find customers\n" + err.Error())
 	}
@@ -77,12 +76,12 @@ func (cAggregate *CustomerAggregate) Customers() ([]*Customer, error) {
 // CustomerByName return customer by name
 func (cAggregate *CustomerAggregate) CustomerByName(name string) (*Customer, error) {
 
-	customerEntity := cAggregate.CustomerCacheStore.RetriveCustomerEntityInCache(name)
+	customerEntity := cAggregate.CacheStore.RetriveCustomerEntity(name)
 	if customerEntity != nil {
 		return makeCustomerByEntity(customerEntity), nil
 	}
 
-	customerEntity, err := cAggregate.CustomerRepository.FindCustomerByName(name)
+	customerEntity, err := cAggregate.Repository.FindCustomerByName(name)
 	if err != nil {
 		return nil, errors.New("could not find customer\n" + err.Error())
 	}
@@ -91,7 +90,7 @@ func (cAggregate *CustomerAggregate) CustomerByName(name string) (*Customer, err
 		return nil, nil
 	}
 
-	cAggregate.CustomerCacheStore.PersistCustomerEntityInCache(customerEntity)
+	cAggregate.CacheStore.PersistCustomerEntity(customerEntity)
 
 	return makeCustomerByEntity(customerEntity), nil
 }

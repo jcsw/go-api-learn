@@ -17,16 +17,15 @@ func CreateNewCustomer(newCustomer *domain.Customer) (*domain.Customer, error) {
 	}
 
 	customerRepository := repository.Repository{MongoSession: mongoSession}
-	cAggregate := domain.CustomerAggregate{CustomerRepository: &customerRepository}
+	customerAggregate := domain.CustomerAggregate{Repository: &customerRepository}
 
-	createdCustomer, err := cAggregate.CreateCustomer(newCustomer)
+	createdCustomer, err := customerAggregate.CreateCustomer(newCustomer)
 	if err != nil {
 		logger.Error("p=service f=CreateNewCustomer \n%v", err)
 		return nil, err
 	}
 
 	return createdCustomer, nil
-
 }
 
 // FindCustomerByName find customer by name
@@ -39,9 +38,9 @@ func FindCustomerByName(customerName string) (*domain.Customer, error) {
 
 	customerRepository := repository.Repository{MongoSession: mongoSession}
 	customerCacheStore := cachestore.CacheStore{}
-	cAggregate := domain.CustomerAggregate{CustomerRepository: &customerRepository, CustomerCacheStore: customerCacheStore}
+	customerAggregate := domain.CustomerAggregate{Repository: &customerRepository, CacheStore: customerCacheStore}
 
-	customer, err := cAggregate.CustomerByName(customerName)
+	customer, err := customerAggregate.CustomerByName(customerName)
 	if err != nil {
 		logger.Error("p=service f=FindCustomerByName \n%v", err)
 		return nil, err
@@ -59,9 +58,9 @@ func FindAllCustomers() ([]*domain.Customer, error) {
 	}
 
 	customerRepository := repository.Repository{MongoSession: mongoSession}
-	cAggregate := domain.CustomerAggregate{CustomerRepository: &customerRepository}
+	customerAggregate := domain.CustomerAggregate{Repository: &customerRepository}
 
-	customers, err := cAggregate.Customers()
+	customers, err := customerAggregate.Customers()
 	if err != nil {
 		logger.Error("p=service f=FindAllCustomers \n%v", err)
 		return nil, err
