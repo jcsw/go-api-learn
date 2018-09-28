@@ -4,76 +4,74 @@ import (
 	"encoding/json"
 	"net/http"
 
-	"gopkg.in/macaron.v1"
-
 	"github.com/jcsw/go-api-learn/pkg/domain"
 	"github.com/jcsw/go-api-learn/pkg/service"
 )
 
 // CustomerHandler function to handle "/customer"
-func CustomerHandler(ctx *macaron.Context) {
+func CustomerHandler(w http.ResponseWriter, r *http.Request) {
 
-	if ctx.Req.Method == "POST" {
-		addCustomerHandler(ctx)
+	if r.Method == "POST" {
+		addCustomerHandler(w, r)
 		return
 	}
 
-	if ctx.Req.Method == "GET" {
-		name := ctx.Query("name")
+	if r.Method == "GET" {
+		name := r.URL.Query().Get("name")
 		if name != "" {
-			getCustomerHandler(ctx, name)
+			getCustomerHandler(w, r, name)
 			return
 		}
 
-		listCustomersHandler(ctx)
+		listCustomersHandler(w, r)
 		return
 	}
 }
 
-func addCustomerHandler(ctx *macaron.Context) {
+func addCustomerHandler(w http.ResponseWriter, r *http.Request) {
 
-	reader := ctx.Req.Body().ReadCloser()
+	reader := r.Body
 	defer reader.Close()
 
 	var newCustomer domain.Customer
 	if err := json.NewDecoder(reader).Decode(&newCustomer); err != nil {
-		respondWithError(ctx, http.StatusBadRequest, "Invalid request payload")
+		respondWithError(w, http.StatusBadRequest, "Invalid request payload")
 		return
 	}
 
 	createdCustomer, err := service.CreateNewCustomer(&newCustomer)
 	if err != nil {
-		respondWithError(ctx, http.StatusInternalServerError, "could not complete customer registration")
+		respondWithError(w, http.StatusInternalServerError, "could not complete customer registration")
 		return
 	}
 
-	respondWithJSON(ctx, http.StatusOK, createdCustomer)
+	respondWithJSON(w, http.StatusOK, createdCustomer)
 }
 
-func listCustomersHandler(ctx *macaron.Context) {
+func listCustomersHandler(w http.ResponseWriter, r *http.Request) {
 
 	customers, err := service.FindAllCustomers()
 	if err != nil {
-		respondWithError(ctx, http.StatusInternalServerError, "Error to process request")
+		respondWithError(w, http.StatusInternalServerError, "Error to process request")
 		return
 	}
 
-	respondWithJSON(ctx, http.StatusOK, customers)
+	respondWithJSON(w, http.StatusOK, customers)
 
 }
 
-func getCustomerHandler(ctx *macaron.Context, customerName string) {
+func getCustomerHandler(w http.ResponseWriter, r *http.Request, customerName string) {
 
 	customer, err := service.FindCustomerByName(customerName)
 	if err != nil {
-		respondWithError(ctx, http.StatusInternalServerError, "Error to process request")
+		respondWithError(w, http.StatusInternalServerError, "Error to process request")
 		return
 	}
 
 	if customer == nil {
-		respondWithError(ctx, http.StatusNotFound, "Customer not found")
+		respondWithError(w, http.StatusNotFound, "Customer not found")
 		return
 	}
 
-	respondWithJSON(ctx, http.StatusOK, customer)
+	respondWithJSON(w, http.StatusOK, customer)
 }

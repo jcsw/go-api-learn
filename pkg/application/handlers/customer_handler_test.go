@@ -7,7 +7,6 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
-	"gopkg.in/macaron.v1"
 
 	"github.com/jcsw/go-api-learn/pkg/application/handlers"
 )
@@ -26,13 +25,9 @@ func TestShoudReturnErrorOnPostCustomerWhenDatabaseIsOff(t *testing.T) {
 	req, err := http.NewRequest("POST", "/customer", bytes.NewBuffer(payload))
 	assert.NoError(err)
 
-	m := macaron.New()
-	m.Use(macaron.Renderer())
-	m.Route("/customer", "GET,POST", handlers.CustomerHandler)
-
 	resp := httptest.NewRecorder()
 
-	m.ServeHTTP(resp, req)
+	handlers.CustomerHandler(resp, req)
 
 	assert.Equal(expectedStatusCode, resp.Code, description)
 	assert.Equal(expectedBody, string(resp.Body.Bytes()), description)
@@ -50,13 +45,9 @@ func TestShoudReturnErrorOnGetCustomersWhenDatabaseIsOff(t *testing.T) {
 	req, err := http.NewRequest("GET", "/customer", nil)
 	assert.NoError(err)
 
-	m := macaron.New()
-	m.Use(macaron.Renderer())
-	m.Route("/customer", "GET,POST", handlers.CustomerHandler)
-
 	resp := httptest.NewRecorder()
 
-	m.ServeHTTP(resp, req)
+	handlers.CustomerHandler(resp, req)
 
 	assert.Equal(expectedStatusCode, resp.Code, description)
 	assert.Equal(expectedBody, string(resp.Body.Bytes()), description)

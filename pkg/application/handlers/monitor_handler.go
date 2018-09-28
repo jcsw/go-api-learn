@@ -4,7 +4,6 @@ import (
 	"net/http"
 
 	"github.com/jcsw/go-api-learn/pkg/infra/database"
-	"gopkg.in/macaron.v1"
 )
 
 type monitorComponent struct {
@@ -13,10 +12,10 @@ type monitorComponent struct {
 }
 
 // MonitorHandler function to handle "/monitor"
-func MonitorHandler(ctx *macaron.Context) {
+func MonitorHandler(w http.ResponseWriter, r *http.Request) {
 	monitors := []monitorComponent{}
 	monitors = append(monitors, getMongoDBStatus())
-	respondWithJSON(ctx, http.StatusOK, monitors)
+	respondWithJSON(w, http.StatusOK, monitors)
 }
 
 func getMongoDBStatus() monitorComponent {

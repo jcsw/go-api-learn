@@ -17,12 +17,6 @@
   version = "v1.1.1"
 
 [[projects]]
-  branch = "master"
-  name = "github.com/go-macaron/inject"
-  packages = ["."]
-  revision = "d8a0b8677191f4380287cfebd08e462217bac7ad"
-
-[[projects]]
   name = "github.com/pmezard/go-difflib"
   packages = ["difflib"]
   revision = "792786c7400a136282c1664665ae0a8db921c6c2"
@@ -42,24 +36,6 @@
   ]
   revision = "f35b8ab0b5a2cef36673838d662e249dd9c94686"
   version = "v1.2.2"
-
-[[projects]]
-  branch = "master"
-  name = "golang.org/x/crypto"
-  packages = ["pbkdf2"]
-  revision = "614d502a4dac94afa3a6ce146bd1736da82514c6"
-
-[[projects]]
-  name = "gopkg.in/ini.v1"
-  packages = ["."]
-  revision = "5cf292cae48347c2490ac1a58fe36735fb78df7e"
-  version = "v1.38.2"
-
-[[projects]]
-  name = "gopkg.in/macaron.v1"
-  packages = ["."]
-  revision = "c1be95e6d21e769e44e1ec33cec9da5837861c10"
-  version = "v1.3.1"
 
 [[projects]]
   branch = "v2"
@@ -82,6 +58,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "a43a3712feb739ed2fd6095516610a599d6a874d531d25d278ebdb1f099d9f22"
+  inputs-digest = "41dfece23c57e0ee14ddc810e5314dbd8cfd93d0445a2c4e95118918c69fffd9"
   solver-name = "gps-cdcl"
   solver-version = 1
