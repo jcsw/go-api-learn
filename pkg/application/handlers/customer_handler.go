@@ -15,23 +15,23 @@ import (
 func CustomerHandler(w http.ResponseWriter, r *http.Request) {
 
 	if r.Method == "POST" {
-		addCustomerHandler(w, r)
+		addCustomer(w, r)
 		return
 	}
 
 	if r.Method == "GET" {
 		name := r.URL.Query().Get("name")
 		if name != "" {
-			getCustomerHandler(w, r, name)
+			getCustomer(w, r, name)
 			return
 		}
 
-		listCustomersHandler(w, r)
+		listCustomers(w, r)
 		return
 	}
 }
 
-func addCustomerHandler(w http.ResponseWriter, r *http.Request) {
+func addCustomer(w http.ResponseWriter, r *http.Request) {
 
 	reader := r.Body
 	defer reader.Close()
@@ -60,7 +60,7 @@ func addCustomerHandler(w http.ResponseWriter, r *http.Request) {
 	respondWithJSON(w, http.StatusOK, createdCustomer)
 }
 
-func listCustomersHandler(w http.ResponseWriter, r *http.Request) {
+func listCustomers(w http.ResponseWriter, r *http.Request) {
 
 	customerRepository := repository.Repository{MongoClient: database.RetrieveMongoClient()}
 	aggregate := service.CustomerAggregate{Repository: &customerRepository}
@@ -75,7 +75,7 @@ func listCustomersHandler(w http.ResponseWriter, r *http.Request) {
 
 }
 
-func getCustomerHandler(w http.ResponseWriter, r *http.Request, customerName string) {
+func getCustomer(w http.ResponseWriter, r *http.Request, customerName string) {
 
 	customerRepository := repository.Repository{MongoClient: database.RetrieveMongoClient()}
 	customerCacheStore := cachestore.CacheStore{}
