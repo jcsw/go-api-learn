@@ -1,55 +1,80 @@
 package service
 
 import (
+	"errors"
+
 	"github.com/jcsw/go-api-learn/pkg/domain"
 	"github.com/jcsw/go-api-learn/pkg/infra/cache/cachestore"
-	"github.com/jcsw/go-api-learn/pkg/infra/database"
 	"github.com/jcsw/go-api-learn/pkg/infra/database/repository"
-	"github.com/jcsw/go-api-learn/pkg/infra/logger"
 )
 
+// CustomerAggregate aggregate
+type CustomerAggregate struct {
+	Repository repository.CustomerRepository
+	CacheStore cachestore.CustomerCacheStore
+}
+
 // CreateNewCustomer create new customer
-func CreateNewCustomer(newCustomer *domain.Customer) (*domain.Customer, error) {
+func (aggregate CustomerAggregate) CreateNewCustomer(newCustomer *domain.Customer) (*domain.Customer, error) {
 
-	customerRepository := repository.Repository{MongoSession: database.RetrieveMongoClient()}
-	customerAggregate := domain.CustomerAggregate{Repository: &customerRepository}
-
-	createdCustomer, err := customerAggregate.CreateCustomer(newCustomer)
-	if err != nil {
-		logger.Error("p=service f=CreateNewCustomer \n%v", err)
+	if err := newCustomer.Validate(); err != nil {
 		return nil, err
 	}
 
-	return createdCustomer, nil
+	newCustomerEntity := toEntity(newCustomer)
+	if err := aggregate.Repository.InsertCustomer(newCustomerEntity); err != nil {
+		return nil, errors.New("could not complete customer registration")
+	}
+
+	return makeCustomerByEntity(newCustomerEntity), nil
 }
 
 // FindCustomerByName find customer by name
-func FindCustomerByName(customerName string) (*domain.Customer, error) {
+func (aggregate CustomerAggregate) FindCustomerByName(customerName string) (*domain.Customer, error) {
 
-	customerRepository := repository.Repository{MongoSession: database.RetrieveMongoClient()}
-	customerCacheStore := cachestore.CacheStore{}
-	customerAggregate := domain.CustomerAggregate{Repository: &customerRepository, CacheStore: customerCacheStore}
-
-	customer, err := customerAggregate.CustomerByName(customerName)
-	if err != nil {
-		logger.Error("p=service f=FindCustomerByName \n%v", err)
-		return nil, err
+	customerEntity := aggregate.CacheStore.RetriveCustomerEntity(customerName)
+	if customerEntity != nil {
+		return makeCustomerByEntity(customerEntity), nil
 	}
 
-	return customer, nil
+	customerEntity, err := aggregate.Repository.FindCustomerByName(customerName)
+	if err != nil {
+		return nil, errors.New("could not find customer\n" + err.Error())
+	}
+
+	if customerEntity == nil {
+		return nil, nil
+	}
+
+	aggregate.CacheStore.PersistCustomerEntity(customerEntity)
+
+	return makeCustomerByEntity(customerEntity), nil
 }
 
 // FindAllCustomers find all customers
-func FindAllCustomers() ([]*domain.Customer, error) {
+func (aggregate CustomerAggregate) FindAllCustomers() ([]*domain.Customer, error) {
 
-	customerRepository := repository.Repository{MongoSession: database.RetrieveMongoClient()}
-	customerAggregate := domain.CustomerAggregate{Repository: &customerRepository}
-
-	customers, err := customerAggregate.Customers()
+	customersEntity, err := aggregate.Repository.FindAllCustomers()
 	if err != nil {
-		logger.Error("p=service f=FindAllCustomers \n%v", err)
-		return nil, err
+		return nil, errors.New("could not find customers\n" + err.Error())
+	}
+
+	customers := make([]*domain.Customer, len(customersEntity), len(customersEntity))
+	for i, entity := range customersEntity {
+		customers[i] = makeCustomerByEntity(entity)
 	}
 
 	return customers, nil
+}
+
+func makeCustomerByEntity(customerEntity *repository.CustomerEntity) *domain.Customer {
+	return &domain.Customer{ID: customerEntity.ID.Hex(), Name: customerEntity.Name, City: customerEntity.City}
+}
+
+func toEntity(customer *domain.Customer) *repository.CustomerEntity {
+	customerEntity := repository.CustomerEntity{
+		Name: customer.Name,
+		City: customer.City,
+	}
+	return &customerEntity
 }

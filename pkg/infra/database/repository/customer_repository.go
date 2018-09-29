@@ -25,7 +25,7 @@ type CustomerEntity struct {
 
 // Repository define the data repository
 type Repository struct {
-	MongoSession *mongo.Client
+	MongoClient *mongo.Client
 }
 
 // CustomerRepository define the data customer repository
@@ -36,10 +36,10 @@ type CustomerRepository interface {
 }
 
 func (repository *Repository) customerCollection() (*mongo.Collection, error) {
-	if repository.MongoSession == nil {
+	if repository.MongoClient == nil {
 		return nil, errors.New("could not communicate with database")
 	}
-	return repository.MongoSession.Database(databaseName).Collection(collectionName, nil), nil
+	return repository.MongoClient.Database(databaseName).Collection(collectionName, nil), nil
 }
 
 // InsertCustomer function to persist customer

@@ -5,6 +5,9 @@ import (
 	"net/http"
 
 	"github.com/jcsw/go-api-learn/pkg/domain"
+	"github.com/jcsw/go-api-learn/pkg/infra/cache/cachestore"
+	"github.com/jcsw/go-api-learn/pkg/infra/database"
+	"github.com/jcsw/go-api-learn/pkg/infra/database/repository"
 	"github.com/jcsw/go-api-learn/pkg/service"
 )
 
@@ -39,7 +42,10 @@ func addCustomerHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	createdCustomer, err := service.CreateNewCustomer(&newCustomer)
+	customerRepository := repository.Repository{MongoClient: database.RetrieveMongoClient()}
+	aggregate := service.CustomerAggregate{Repository: &customerRepository}
+
+	createdCustomer, err := aggregate.CreateNewCustomer(&newCustomer)
 	if err != nil {
 		respondWithError(w, http.StatusInternalServerError, "could not complete customer registration")
 		return
@@ -50,7 +56,10 @@ func addCustomerHandler(w http.ResponseWriter, r *http.Request) {
 
 func listCustomersHandler(w http.ResponseWriter, r *http.Request) {
 
-	customers, err := service.FindAllCustomers()
+	customerRepository := repository.Repository{MongoClient: database.RetrieveMongoClient()}
+	aggregate := service.CustomerAggregate{Repository: &customerRepository}
+
+	customers, err := aggregate.FindAllCustomers()
 	if err != nil {
 		respondWithError(w, http.StatusInternalServerError, "Error to process request")
 		return
@@ -62,7 +71,12 @@ func listCustomersHandler(w http.ResponseWriter, r *http.Request) {
 
 func getCustomerHandler(w http.ResponseWriter, r *http.Request, customerName string) {
 
-	customer, err := service.FindCustomerByName(customerName)
+	customerRepository := repository.Repository{MongoClient: database.RetrieveMongoClient()}
+	customerCacheStore := cachestore.CacheStore{}
+
+	aggregate := service.CustomerAggregate{Repository: &customerRepository, CacheStore: &customerCacheStore}
+
+	customer, err := aggregate.FindCustomerByName(customerName)
 	if err != nil {
 		respondWithError(w, http.StatusInternalServerError, "Error to process request")
 		return
