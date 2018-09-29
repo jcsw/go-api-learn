@@ -1,1 +1,1 @@
-# Rest Base API with Go
+# Rest API with Go
