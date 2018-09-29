@@ -35,18 +35,18 @@ func RetrieveMongoClient() *mongo.Client {
 		return mongoClient
 	}
 
-	logger.Warn("p=database f=RetrieveMongoDBSession 'mongodb client is not active'")
+	logger.Warn("p=database f=RetrieveMongoClient 'mongodb client is not active'")
 	return nil
 }
 
-// CloseMongoDBSession close the mongodb session
-func CloseMongoDBSession() {
+// CloseMongoClient close the mongodb session
+func CloseMongoClient() {
 	if mongoClient != nil {
 		ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
 		defer cancel()
 
 		mongoClient.Disconnect(ctx)
-		logger.Info("p=database f=CloseMongoDBSession 'mongodb client it's closed'")
+		logger.Info("p=database f=CloseMongoClient 'mongodb client it's closed'")
 	}
 }
 

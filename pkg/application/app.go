@@ -70,7 +70,7 @@ func (app *App) Stop() {
 
 	atomic.StoreInt32(&healthy, 0)
 
-	database.CloseMongoDBSession()
+	database.CloseMongoClient()
 
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()

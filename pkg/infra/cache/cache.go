@@ -40,23 +40,23 @@ func bigCacheMonitor() {
 	}
 }
 
-// PullInLocalCache - Pull value in local cache
-func PullInLocalCache(key string) []byte {
+// GetValueInLocalCache - Pull value in local cache
+func GetValueInLocalCache(key string) []byte {
 	value, err := bCache.Get(key)
 	if err != nil {
-		logger.Info("p=cache f=PullInLocalCache key=%s \n%v", key, err)
+		logger.Info("p=cache f=GetValueInLocalCache key=%s \n%v", key, err)
 		return nil
 	}
 
-	logger.Info("p=cache f=PullInLocalCache key=%s value=%s", key, value)
+	logger.Info("p=cache f=GetValueInLocalCache key=%s value=%s", key, value)
 	return value
 }
 
-// PutInLocalCache - Put value in local cache
-func PutInLocalCache(key string, value []byte) {
-	logger.Info("p=cache f=PutInLocalCache key=%s value=%s", key, value)
+// SetValueInLocalCache - Put value in local cache
+func SetValueInLocalCache(key string, value []byte) {
+	logger.Info("p=cache f=SetValueInLocalCache key=%s value=%s", key, value)
 
 	if err := bCache.Set(key, value); err != nil {
-		logger.Error("p=cache f=PutInLocalCache \n%s", err)
+		logger.Error("p=cache f=SetValueInLocalCache \n%s", err)
 	}
 }

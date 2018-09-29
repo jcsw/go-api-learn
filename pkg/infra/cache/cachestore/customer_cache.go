@@ -24,7 +24,7 @@ type CacheStore struct {
 // RetriveCustomerEntity retrive the customerEntity in cache
 func (CacheStore) RetriveCustomerEntity(customerName string) *repository.CustomerEntity {
 
-	customerInBytes := cache.PullInLocalCache(makeCacheKey(customerName))
+	customerInBytes := cache.GetValueInLocalCache(makeCacheKey(customerName))
 	if customerInBytes == nil {
 		return nil
 	}
@@ -47,7 +47,7 @@ func (CacheStore) PersistCustomerEntity(customerEntity *repository.CustomerEntit
 		return
 	}
 
-	cache.PutInLocalCache(makeCacheKey(customerEntity.Name), customerInBytes)
+	cache.SetValueInLocalCache(makeCacheKey(customerEntity.Name), customerInBytes)
 }
 
 func makeCacheKey(customerName string) string {

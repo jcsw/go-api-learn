@@ -47,6 +47,12 @@ func addCustomerHandler(w http.ResponseWriter, r *http.Request) {
 
 	createdCustomer, err := aggregate.CreateNewCustomer(&newCustomer)
 	if err != nil {
+
+		if err == domain.ErrInvalidCity || err == domain.ErrInvalidName {
+			respondWithError(w, http.StatusBadRequest, err.Error())
+			return
+		}
+
 		respondWithError(w, http.StatusInternalServerError, "could not complete customer registration")
 		return
 	}
