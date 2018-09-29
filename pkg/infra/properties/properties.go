@@ -22,7 +22,7 @@ type MongoDBProperties struct {
 	Password  string        `yaml:"password"`
 	Database  string        `yaml:"database"`
 	Timeout   time.Duration `yaml:"timeout"`
-	PoolLimit int           `yaml:"poolLimit"`
+	PoolLimit uint16        `yaml:"poolLimit"`
 }
 
 // AppProperties the loaded properties values

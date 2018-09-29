@@ -4,9 +4,9 @@ import (
 	"errors"
 	"testing"
 
+	"github.com/mongodb/mongo-go-driver/bson/objectid"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
-	"gopkg.in/mgo.v2/bson"
 
 	"github.com/jcsw/go-api-learn/pkg/infra/database/repository"
 )
@@ -95,7 +95,7 @@ func TestShouldReturnCustomerWhenNameExistsInDatabase(t *testing.T) {
 	customerName := "Lucas"
 
 	repositoryMock := &RepositoryMock{}
-	customerInDataBase := repository.CustomerEntity{ID: bson.NewObjectId(), Name: customerName, City: "São Paulo"}
+	customerInDataBase := repository.CustomerEntity{ID: objectid.New(), Name: customerName, City: "São Paulo"}
 	repositoryMock.On("FindCustomerByName", customerName).Return(&customerInDataBase, nil)
 
 	cacheStoreMock := &CacheStoreMock{}
@@ -127,7 +127,7 @@ func TestShouldReturnCustomerWhenNameExistsInCache(t *testing.T) {
 	repositoryMock.On("FindCustomerByName", customerName).Return(nil, nil)
 
 	cacheStoreMock := &CacheStoreMock{}
-	customerInCache := repository.CustomerEntity{ID: bson.NewObjectId(), Name: customerName, City: "São Paulo"}
+	customerInCache := repository.CustomerEntity{ID: objectid.New(), Name: customerName, City: "São Paulo"}
 	cacheStoreMock.On("RetriveCustomerEntity", customerName).Return(&customerInCache)
 
 	cAggregate := CustomerAggregate{Repository: repositoryMock, CacheStore: cacheStoreMock}
@@ -197,7 +197,7 @@ func TestShouldReturnErrorWhenNotHasInCacheAndRepositoryIsUnavaliable(t *testing
 func TestShouldReturnCustomersWhenExistsOneCustomer(t *testing.T) {
 
 	repositoryMock := &RepositoryMock{}
-	customerAmanda := &repository.CustomerEntity{ID: bson.NewObjectId(), Name: "Amanda", City: "São Paulo"}
+	customerAmanda := &repository.CustomerEntity{ID: objectid.New(), Name: "Amanda", City: "São Paulo"}
 	repositoryMock.On("FindAllCustomers").Return([]*repository.CustomerEntity{customerAmanda}, nil)
 
 	cAggregate := CustomerAggregate{Repository: repositoryMock}
@@ -219,8 +219,8 @@ func TestShouldReturnCustomersWhenExistsOneCustomer(t *testing.T) {
 func TestShouldReturnCustomersWhenExistsTwoCustomer(t *testing.T) {
 
 	repositoryMock := &RepositoryMock{}
-	customerAmanda := &repository.CustomerEntity{ID: bson.NewObjectId(), Name: "Amanda", City: "São Paulo"}
-	customerMarcos := &repository.CustomerEntity{ID: bson.NewObjectId(), Name: "Marcos", City: "Recife"}
+	customerAmanda := &repository.CustomerEntity{ID: objectid.New(), Name: "Amanda", City: "São Paulo"}
+	customerMarcos := &repository.CustomerEntity{ID: objectid.New(), Name: "Marcos", City: "Recife"}
 	repositoryMock.On("FindAllCustomers").Return([]*repository.CustomerEntity{customerAmanda, customerMarcos}, nil)
 
 	cAggregate := CustomerAggregate{Repository: repositoryMock}
@@ -280,7 +280,7 @@ func (m *RepositoryMock) InsertCustomer(newCustomerEntity *repository.CustomerEn
 	args := m.Called(newCustomerEntity)
 
 	if args.Error(0) == nil {
-		newCustomerEntity.ID = bson.NewObjectId()
+		newCustomerEntity.ID = objectid.New()
 	}
 
 	return args.Error(0)

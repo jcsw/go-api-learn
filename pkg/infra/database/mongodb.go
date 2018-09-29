@@ -1,86 +1,94 @@
 package database
 
 import (
+	"context"
 	"sync/atomic"
 	"time"
 
-	"github.com/jcsw/go-api-learn/pkg/infra/properties"
+	"github.com/mongodb/mongo-go-driver/core/connstring"
+	"github.com/mongodb/mongo-go-driver/mongo"
 
-	"github.com/jcsw/go-api-learn/pkg/infra/database/repository"
 	"github.com/jcsw/go-api-learn/pkg/infra/logger"
-	"gopkg.in/mgo.v2"
+	"github.com/jcsw/go-api-learn/pkg/infra/properties"
 )
 
 var (
-	mgoSession *mgo.Session
-	healthy    int32
+	mongoClient *mongo.Client
+	healthy     int32
 )
 
-// InitializeMongoDBSession initiliaze the mongodb session
-func InitializeMongoDBSession() {
-	mgoSession = createMongoDBSession()
-	go mongoDBSessionMonitor()
+// InitializeMongoClient initiliaze the mongodb session
+func InitializeMongoClient() {
+	mongoClient = createMongoClient()
+	go mongoClientMonitor()
 }
 
-// IsMongoDBSessionAlive return mongoDB session status
-func IsMongoDBSessionAlive() bool {
+// IsMongoClientAlive return mongoDB session status
+func IsMongoClientAlive() bool {
 	return atomic.LoadInt32(&healthy) == 1
 }
 
-// RetrieveMongoDBSession Return a mongodb session
-func RetrieveMongoDBSession() *mgo.Session {
-	if mgoSession != nil {
-		return mgoSession.Clone()
+// RetrieveMongoClient Return a mongodb session
+func RetrieveMongoClient() *mongo.Client {
+
+	if mongoClient != nil {
+		return mongoClient
 	}
 
-	logger.Warn("p=database f=RetrieveMongoDBSession 'mongodb session is not active'")
+	logger.Warn("p=database f=RetrieveMongoDBSession 'mongodb client is not active'")
 	return nil
 }
 
 // CloseMongoDBSession close the mongodb session
 func CloseMongoDBSession() {
-	if mgoSession != nil {
-		mgoSession.Close()
-		logger.Info("p=database f=CloseMongoDBSession 'mongodb session it's closed'")
+	if mongoClient != nil {
+		ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
+		defer cancel()
+
+		mongoClient.Disconnect(ctx)
+		logger.Info("p=database f=CloseMongoDBSession 'mongodb client it's closed'")
 	}
 }
 
-func createMongoDBSession() *mgo.Session {
+func createMongoClient() *mongo.Client {
 
-	session, err := mgo.DialWithInfo(&mgo.DialInfo{
-		Addrs:     properties.AppProperties.MongoDB.Hosts,
-		Username:  properties.AppProperties.MongoDB.Username,
-		Password:  properties.AppProperties.MongoDB.Password,
-		Database:  properties.AppProperties.MongoDB.Database,
-		Timeout:   properties.AppProperties.MongoDB.Timeout * time.Millisecond,
-		PoolLimit: properties.AppProperties.MongoDB.PoolLimit,
+	client, err := mongo.NewClientFromConnString(connstring.ConnString{
+		Hosts:           properties.AppProperties.MongoDB.Hosts,
+		Username:        properties.AppProperties.MongoDB.Username,
+		Password:        properties.AppProperties.MongoDB.Password,
+		Database:        properties.AppProperties.MongoDB.Database,
+		ConnectTimeout:  properties.AppProperties.MongoDB.Timeout * time.Millisecond,
+		MaxConnsPerHost: properties.AppProperties.MongoDB.PoolLimit,
 	})
 
 	if err != nil {
-		logger.Error("p=database f=createMongoDBSession 'could not create mongodb session' \n%v", err)
+		logger.Error("p=database f=createMongoClient 'could not create mongodb client' \n%v", err)
 		return nil
 	}
 
-	session.SetMode(mgo.Monotonic, true)
+	err = client.Connect(context.TODO())
+	if err != nil {
+		logger.Error("p=database f=createMongoClient 'could not connect at mongodb' \n%v", err)
+		return nil
+	}
 
-	logger.Info("p=database f=createMongoDBSession 'mongodb session created with servers' %v", session.LiveServers())
+	dataBases, _ := client.ListDatabases(nil, nil, nil)
+	logger.Info("p=database f=createMongoClient 'mongodb client created with databases'\n%+v", dataBases)
 	setMongoDBStatusUp()
 
-	repository.EnsureCustomerIndex(session)
-
-	return session
+	return client
 }
 
-func mongoDBSessionMonitor() {
+func mongoClientMonitor() {
 	for {
 
-		if mgoSession == nil || mgoSession.Ping() != nil {
+		if mongoClient == nil || mongoClient.Ping(nil, nil) != nil {
 			setMongoDBStatusDown()
-			logger.Warn("p=database f=mongoDBSessionMonitor 'mongodb session is not active, trying to reconnect'")
-			mgoSession = createMongoDBSession()
+			logger.Warn("p=database f=mongoClientMonitor 'mongodb client is not active, trying to reconnect'")
+			mongoClient = createMongoClient()
 		} else {
 			setMongoDBStatusUp()
-			logger.Info("p=database f=mongoDBSessionMonitor 'mongodb session it's alive with servers %v'", mgoSession.LiveServers())
+			logger.Info("p=database f=mongoClientMonitor 'mongodb client it's alive'")
 		}
 
 		time.Sleep(30 * time.Second)

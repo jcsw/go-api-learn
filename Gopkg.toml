@@ -4,10 +4,6 @@
 [prune]
   go-tests = true
   unused-packages = true
-  
-[[constraint]]
-  branch = "v2"
-  name = "gopkg.in/mgo.v2"
 
 [[constraint]]
   name = "github.com/allegro/bigcache"
@@ -20,3 +16,6 @@
 [[constraint]]
   name = "gopkg.in/yaml.v2"
   version = "2.2.1"
+[[constraint]]
+  name = "github.com/mongodb/mongo-go-driver"
+  version = "0.0.15"

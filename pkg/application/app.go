@@ -37,7 +37,7 @@ func (app *App) Initialize(env string) {
 
 	properties.LoadProperties(env)
 	cache.InitializeLocalCache()
-	database.InitializeMongoDBSession()
+	database.InitializeMongoClient()
 
 	router := http.NewServeMux()
 	router.HandleFunc("/health", health)

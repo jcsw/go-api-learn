@@ -1,10 +1,12 @@
 package repository
 
 import (
+	"context"
 	"errors"
 
-	"gopkg.in/mgo.v2"
-	"gopkg.in/mgo.v2/bson"
+	"github.com/mongodb/mongo-go-driver/bson"
+	"github.com/mongodb/mongo-go-driver/bson/objectid"
+	"github.com/mongodb/mongo-go-driver/mongo"
 
 	"github.com/jcsw/go-api-learn/pkg/infra/logger"
 )
@@ -16,14 +18,14 @@ const (
 
 // CustomerEntity represents a client on mongodb
 type CustomerEntity struct {
-	ID   bson.ObjectId `bson:"_id"`
-	Name string        `bson:"name"`
-	City string        `bson:"city"`
+	ID   objectid.ObjectID `bson:"_id"`
+	Name string            `bson:"name"`
+	City string            `bson:"city"`
 }
 
 // Repository define the data repository
 type Repository struct {
-	MongoSession *mgo.Session
+	MongoSession *mongo.Client
 }
 
 // CustomerRepository define the data customer repository
@@ -33,33 +35,11 @@ type CustomerRepository interface {
 	FindAllCustomers() ([]*CustomerEntity, error)
 }
 
-// EnsureCustomerIndex create index on customer collection
-func EnsureCustomerIndex(mongoSession *mgo.Session) {
-	session := mongoSession.Copy()
-	defer session.Close()
-
-	index := mgo.Index{
-		Key:        []string{"name"},
-		Unique:     true,
-		DropDups:   true,
-		Background: true,
-		Sparse:     true,
-	}
-
-	err := mongoSession.DB(databaseName).C(collectionName).EnsureIndex(index)
-	if err != nil {
-		logger.Error("p=repository f=EnsureCustomerIndex 'could not create index' \n%v", err)
-		return
-	}
-
-	logger.Info("p=repository f=EnsureCustomerIndex 'index created'")
-}
-
-func (repository *Repository) customerCollection() (*mgo.Collection, error) {
+func (repository *Repository) customerCollection() (*mongo.Collection, error) {
 	if repository.MongoSession == nil {
 		return nil, errors.New("could not communicate with database")
 	}
-	return repository.MongoSession.DB(databaseName).C(collectionName), nil
+	return repository.MongoSession.Database(databaseName).Collection(collectionName, nil), nil
 }
 
 // InsertCustomer function to persist customer
@@ -71,8 +51,8 @@ func (repository *Repository) InsertCustomer(newCustomerEntity *CustomerEntity) 
 		return err
 	}
 
-	newCustomerEntity.ID = bson.NewObjectId()
-	if err := collection.Insert(&newCustomerEntity); err != nil {
+	newCustomerEntity.ID = objectid.New()
+	if _, err := collection.InsertOne(nil, newCustomerEntity); err != nil {
 		logger.Error("p=repository f=InsertCustomer newCustomerEntity=%+v \n%v", newCustomerEntity, err)
 		return err
 	}
@@ -90,11 +70,23 @@ func (repository *Repository) FindAllCustomers() ([]*CustomerEntity, error) {
 		return nil, err
 	}
 
-	customers := []*CustomerEntity{}
-	err = collection.Find(nil).All(&customers)
+	cur, err := collection.Find(nil, nil)
 	if err != nil {
 		logger.Error("p=repository f=FindAllCustomers \n%v", err)
 		return nil, err
+	}
+	defer cur.Close(context.Background())
+
+	customers := []*CustomerEntity{}
+	for cur.Next(context.Background()) {
+
+		customer := CustomerEntity{}
+		err := cur.Decode(&customer)
+		if err != nil {
+			logger.Error("p=repository f=FindAllCustomers \n%v", err)
+		}
+
+		customers = append(customers, &customer)
 	}
 
 	logger.Info("p=repository f=FindAllCustomers length=%d", len(customers))
@@ -111,7 +103,8 @@ func (repository *Repository) FindCustomerByName(name string) (*CustomerEntity, 
 	}
 
 	customer := CustomerEntity{}
-	err = collection.Find(bson.M{"name": name}).One(&customer)
+	filter := bson.NewDocument(bson.EC.String("name", name))
+	err = collection.FindOne(nil, filter, nil).Decode(&customer)
 	if err != nil {
 		logger.Error("p=repository f=FindCustomerByName name=%s \n%v", name, err)
 		return nil, err

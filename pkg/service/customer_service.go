@@ -11,12 +11,7 @@ import (
 // CreateNewCustomer create new customer
 func CreateNewCustomer(newCustomer *domain.Customer) (*domain.Customer, error) {
 
-	mongoSession := database.RetrieveMongoDBSession()
-	if mongoSession != nil {
-		defer mongoSession.Close()
-	}
-
-	customerRepository := repository.Repository{MongoSession: mongoSession}
+	customerRepository := repository.Repository{MongoSession: database.RetrieveMongoClient()}
 	customerAggregate := domain.CustomerAggregate{Repository: &customerRepository}
 
 	createdCustomer, err := customerAggregate.CreateCustomer(newCustomer)
@@ -31,12 +26,7 @@ func CreateNewCustomer(newCustomer *domain.Customer) (*domain.Customer, error) {
 // FindCustomerByName find customer by name
 func FindCustomerByName(customerName string) (*domain.Customer, error) {
 
-	mongoSession := database.RetrieveMongoDBSession()
-	if mongoSession != nil {
-		defer mongoSession.Close()
-	}
-
-	customerRepository := repository.Repository{MongoSession: mongoSession}
+	customerRepository := repository.Repository{MongoSession: database.RetrieveMongoClient()}
 	customerCacheStore := cachestore.CacheStore{}
 	customerAggregate := domain.CustomerAggregate{Repository: &customerRepository, CacheStore: customerCacheStore}
 
@@ -52,12 +42,7 @@ func FindCustomerByName(customerName string) (*domain.Customer, error) {
 // FindAllCustomers find all customers
 func FindAllCustomers() ([]*domain.Customer, error) {
 
-	mongoSession := database.RetrieveMongoDBSession()
-	if mongoSession != nil {
-		defer mongoSession.Close()
-	}
-
-	customerRepository := repository.Repository{MongoSession: mongoSession}
+	customerRepository := repository.Repository{MongoSession: database.RetrieveMongoClient()}
 	customerAggregate := domain.CustomerAggregate{Repository: &customerRepository}
 
 	customers, err := customerAggregate.Customers()

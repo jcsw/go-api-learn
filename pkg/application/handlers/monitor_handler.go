@@ -20,7 +20,7 @@ func MonitorHandler(w http.ResponseWriter, r *http.Request) {
 
 func getMongoDBStatus() monitorComponent {
 	mongoDBStatus := monitorComponent{Component: "MongoDB"}
-	if database.IsMongoDBSessionAlive() {
+	if database.IsMongoClientAlive() {
 		mongoDBStatus.Status = "OK"
 	} else {
 		mongoDBStatus.Status = "ERROR"
