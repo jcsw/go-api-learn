@@ -8,14 +8,14 @@ import (
 	"github.com/jcsw/go-api-learn/pkg/infra/database/repository"
 )
 
-// CustomerAggregate aggregate
+// CustomerAggregate aggregate to customer service
 type CustomerAggregate struct {
 	Repository repository.CustomerRepository
 	CacheStore cachestore.CustomerCacheStore
 }
 
-// CreateNewCustomer create new customer
-func (aggregate CustomerAggregate) CreateNewCustomer(newCustomer *domain.Customer) (*domain.Customer, error) {
+// CreateNewCustomer create a new customer
+func (aggregate *CustomerAggregate) CreateNewCustomer(newCustomer *domain.Customer) (*domain.Customer, error) {
 
 	if err := newCustomer.Validate(); err != nil {
 		return nil, err
@@ -30,7 +30,7 @@ func (aggregate CustomerAggregate) CreateNewCustomer(newCustomer *domain.Custome
 }
 
 // FindCustomerByName find customer by name
-func (aggregate CustomerAggregate) FindCustomerByName(customerName string) (*domain.Customer, error) {
+func (aggregate *CustomerAggregate) FindCustomerByName(customerName string) (*domain.Customer, error) {
 
 	customerEntity := aggregate.CacheStore.RetriveCustomerEntity(customerName)
 	if customerEntity != nil {
@@ -52,7 +52,7 @@ func (aggregate CustomerAggregate) FindCustomerByName(customerName string) (*dom
 }
 
 // FindAllCustomers find all customers
-func (aggregate CustomerAggregate) FindAllCustomers() ([]*domain.Customer, error) {
+func (aggregate *CustomerAggregate) FindAllCustomers() ([]*domain.Customer, error) {
 
 	customersEntity, err := aggregate.Repository.FindAllCustomers()
 	if err != nil {

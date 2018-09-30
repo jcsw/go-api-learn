@@ -7,123 +7,71 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/mock"
 
 	"github.com/jcsw/go-api-learn/pkg/application/handlers"
-	"github.com/jcsw/go-api-learn/pkg/infra/cache"
+	"github.com/jcsw/go-api-learn/pkg/infra/cache/cachestore"
+	"github.com/jcsw/go-api-learn/pkg/infra/database/repository"
+	"github.com/jcsw/go-api-learn/pkg/service"
 )
 
-func TestShoudReturnErrorOnPostCustomerWhenBodyIsNotValid(t *testing.T) {
-
-	cache.InitializeLocalCache()
-
+func TestPostCustomerHandler(t *testing.T) {
 	assert := assert.New(t)
 
-	description := "could not create customer"
+	tests := []struct {
+		description        string
+		repositoryMock     *repository.RepositoryMock
+		cacheStoreMock     *cachestore.CacheStoreMock
+		payload            []byte
+		expectedStatusCode int
+		expectedBody       string
+	}{
+		{
+			description:        "invalid body",
+			repositoryMock:     &repository.RepositoryMock{},
+			cacheStoreMock:     &cachestore.CacheStoreMock{},
+			payload:            []byte(`"a=b"`),
+			expectedStatusCode: 400,
+			expectedBody:       `{"error":"Invalid request payload"}`,
+		},
+		{
+			description:        "missing argument 'city'",
+			repositoryMock:     &repository.RepositoryMock{},
+			cacheStoreMock:     &cachestore.CacheStoreMock{},
+			payload:            []byte(`{"name":"Fernanda Lima","country":"Limeira"}`),
+			expectedStatusCode: 400,
+			expectedBody:       `{"error":"Invalid value 'city'"}`,
+		},
+		{
+			description:        "succesfull",
+			repositoryMock:     mockCreateCustomer(),
+			cacheStoreMock:     &cachestore.CacheStoreMock{},
+			payload:            []byte(`{"name":"Fernanda Lima","city":"Limeira"}`),
+			expectedStatusCode: 200,
+			expectedBody:       `{"id":".*","name":"Fernanda Lima","city":"Limeira"}`,
+		},
+	}
 
-	expectedStatusCode := 400
-	expectedBody := `{"error":"Invalid request payload"}`
+	for _, tc := range tests {
 
-	payload := []byte(`"a=b"`)
+		req, err := http.NewRequest("POST", "/customer", bytes.NewBuffer(tc.payload))
+		assert.NoError(err)
 
-	req, err := http.NewRequest("POST", "/customer", bytes.NewBuffer(payload))
-	assert.NoError(err)
+		resp := httptest.NewRecorder()
 
-	resp := httptest.NewRecorder()
+		aggregate := service.CustomerAggregate{Repository: tc.repositoryMock, CacheStore: tc.cacheStoreMock}
 
-	handlers.CustomerHandler(resp, req)
+		customerHandler := handlers.CustomerHandler{CAggregate: &aggregate}
 
-	assert.Equal(expectedStatusCode, resp.Code, description)
-	assert.Equal(expectedBody, string(resp.Body.Bytes()), description)
+		customerHandler.Register(resp, req)
+
+		assert.Equal(tc.expectedStatusCode, resp.Code, tc.description)
+		assert.Regexp(tc.expectedBody, string(resp.Body.Bytes()), tc.description)
+	}
 }
 
-func TestShoudReturnErrorOnPostCustomerWhenCustomerIsNotValid(t *testing.T) {
-
-	cache.InitializeLocalCache()
-
-	assert := assert.New(t)
-
-	description := "could not create customer"
-
-	expectedStatusCode := 400
-	expectedBody := `{"error":"Invalid value 'city'"}`
-
-	payload := []byte(`{"name":"Fernanda Lima","country":"Limeira"}`)
-
-	req, err := http.NewRequest("POST", "/customer", bytes.NewBuffer(payload))
-	assert.NoError(err)
-
-	resp := httptest.NewRecorder()
-
-	handlers.CustomerHandler(resp, req)
-
-	assert.Equal(expectedStatusCode, resp.Code, description)
-	assert.Equal(expectedBody, string(resp.Body.Bytes()), description)
-}
-
-func TestShoudReturnErrorOnPostCustomerWhenDatabaseIsOff(t *testing.T) {
-
-	cache.InitializeLocalCache()
-
-	assert := assert.New(t)
-
-	description := "could not create customer"
-
-	expectedStatusCode := 500
-	expectedBody := `{"error":"could not complete customer registration"}`
-
-	payload := []byte(`{"name":"Fernanda Lima","city":"Limeira"}`)
-
-	req, err := http.NewRequest("POST", "/customer", bytes.NewBuffer(payload))
-	assert.NoError(err)
-
-	resp := httptest.NewRecorder()
-
-	handlers.CustomerHandler(resp, req)
-
-	assert.Equal(expectedStatusCode, resp.Code, description)
-	assert.Equal(expectedBody, string(resp.Body.Bytes()), description)
-}
-
-func TestShoudReturnErrorOnGetCustomersWhenDatabaseIsOff(t *testing.T) {
-
-	cache.InitializeLocalCache()
-
-	assert := assert.New(t)
-
-	description := "could not list customers"
-
-	expectedStatusCode := 500
-	expectedBody := `{"error":"Error to process request"}`
-
-	req, err := http.NewRequest("GET", "/customer", nil)
-	assert.NoError(err)
-
-	resp := httptest.NewRecorder()
-
-	handlers.CustomerHandler(resp, req)
-
-	assert.Equal(expectedStatusCode, resp.Code, description)
-	assert.Equal(expectedBody, string(resp.Body.Bytes()), description)
-}
-
-func TestShoudReturnErrorOnGetCustomerWhenDatabaseIsOff(t *testing.T) {
-
-	cache.InitializeLocalCache()
-
-	assert := assert.New(t)
-
-	description := "could not list customers"
-
-	expectedStatusCode := 500
-	expectedBody := `{"error":"Error to process request"}`
-
-	req, err := http.NewRequest("GET", "/customer?name=Fernanda", nil)
-	assert.NoError(err)
-
-	resp := httptest.NewRecorder()
-
-	handlers.CustomerHandler(resp, req)
-
-	assert.Equal(expectedStatusCode, resp.Code, description)
-	assert.Equal(expectedBody, string(resp.Body.Bytes()), description)
+func mockCreateCustomer() *repository.RepositoryMock {
+	repository := &repository.RepositoryMock{}
+	repository.On("InsertCustomer", mock.Anything).Return(nil)
+	return repository
 }

@@ -5,33 +5,35 @@ import (
 	"net/http"
 
 	"github.com/jcsw/go-api-learn/pkg/domain"
-	"github.com/jcsw/go-api-learn/pkg/infra/cache/cachestore"
-	"github.com/jcsw/go-api-learn/pkg/infra/database"
-	"github.com/jcsw/go-api-learn/pkg/infra/database/repository"
 	"github.com/jcsw/go-api-learn/pkg/service"
 )
 
-// CustomerHandler function to handle "/customer"
-func CustomerHandler(w http.ResponseWriter, r *http.Request) {
+// CustomerHandler handler to "/customer"
+type CustomerHandler struct {
+	CAggregate *service.CustomerAggregate
+}
+
+// Register function to handle "/customer"
+func (ch *CustomerHandler) Register(w http.ResponseWriter, r *http.Request) {
 
 	if r.Method == "POST" {
-		addCustomer(w, r)
+		ch.addCustomer(w, r)
 		return
 	}
 
 	if r.Method == "GET" {
 		name := r.URL.Query().Get("name")
 		if name != "" {
-			getCustomer(w, r, name)
+			ch.getCustomer(w, r, name)
 			return
 		}
 
-		listCustomers(w, r)
+		ch.listCustomers(w, r)
 		return
 	}
 }
 
-func addCustomer(w http.ResponseWriter, r *http.Request) {
+func (ch *CustomerHandler) addCustomer(w http.ResponseWriter, r *http.Request) {
 
 	reader := r.Body
 	defer reader.Close()
@@ -42,10 +44,7 @@ func addCustomer(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	customerRepository := repository.Repository{MongoClient: database.RetrieveMongoClient()}
-	aggregate := service.CustomerAggregate{Repository: &customerRepository}
-
-	createdCustomer, err := aggregate.CreateNewCustomer(&newCustomer)
+	createdCustomer, err := ch.CAggregate.CreateNewCustomer(&newCustomer)
 	if err != nil {
 
 		if err == domain.ErrInvalidCity || err == domain.ErrInvalidName {
@@ -60,12 +59,9 @@ func addCustomer(w http.ResponseWriter, r *http.Request) {
 	respondWithJSON(w, http.StatusOK, createdCustomer)
 }
 
-func listCustomers(w http.ResponseWriter, r *http.Request) {
+func (ch *CustomerHandler) listCustomers(w http.ResponseWriter, r *http.Request) {
 
-	customerRepository := repository.Repository{MongoClient: database.RetrieveMongoClient()}
-	aggregate := service.CustomerAggregate{Repository: &customerRepository}
-
-	customers, err := aggregate.FindAllCustomers()
+	customers, err := ch.CAggregate.FindAllCustomers()
 	if err != nil {
 		respondWithError(w, http.StatusInternalServerError, "Error to process request")
 		return
@@ -75,14 +71,9 @@ func listCustomers(w http.ResponseWriter, r *http.Request) {
 
 }
 
-func getCustomer(w http.ResponseWriter, r *http.Request, customerName string) {
+func (ch *CustomerHandler) getCustomer(w http.ResponseWriter, r *http.Request, customerName string) {
 
-	customerRepository := repository.Repository{MongoClient: database.RetrieveMongoClient()}
-	customerCacheStore := cachestore.CacheStore{}
-
-	aggregate := service.CustomerAggregate{Repository: &customerRepository, CacheStore: &customerCacheStore}
-
-	customer, err := aggregate.FindCustomerByName(customerName)
+	customer, err := ch.CAggregate.FindCustomerByName(customerName)
 	if err != nil {
 		respondWithError(w, http.StatusInternalServerError, "Error to process request")
 		return

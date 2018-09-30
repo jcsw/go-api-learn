@@ -8,9 +8,12 @@ import (
 	"time"
 
 	"github.com/jcsw/go-api-learn/pkg/application/handlers"
+	"github.com/jcsw/go-api-learn/pkg/service"
 
 	"github.com/jcsw/go-api-learn/pkg/infra/cache"
+	"github.com/jcsw/go-api-learn/pkg/infra/cache/cachestore"
 	"github.com/jcsw/go-api-learn/pkg/infra/database"
+	"github.com/jcsw/go-api-learn/pkg/infra/database/repository"
 	"github.com/jcsw/go-api-learn/pkg/infra/logger"
 	"github.com/jcsw/go-api-learn/pkg/infra/properties"
 )
@@ -43,7 +46,15 @@ func (app *App) Initialize(env string) {
 	router.HandleFunc("/health", health)
 
 	router.HandleFunc("/monitor", handlers.MonitorHandler)
-	router.HandleFunc("/customer", handlers.CustomerHandler)
+
+	customerRepository := repository.Repository{MongoClient: database.RetrieveMongoClient()}
+	customerCacheStore := cachestore.CacheStore{}
+
+	customerAggregate := service.CustomerAggregate{Repository: &customerRepository, CacheStore: &customerCacheStore}
+
+	customerHandler := handlers.CustomerHandler{CAggregate: &customerAggregate}
+
+	router.HandleFunc("/customer", customerHandler.Register)
 
 	app.server = &http.Server{
 		Addr:         fmt.Sprintf(":%d", properties.AppProperties.ServerPort),
