@@ -2,6 +2,7 @@ package handlers_test
 
 import (
 	"bytes"
+	"errors"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -27,7 +28,7 @@ func TestPostCustomerHandler(t *testing.T) {
 		expectedBody       string
 	}{
 		{
-			description:        "invalid body",
+			description:        "then return error when body is not valid",
 			repositoryMock:     &repository.RepositoryMock{},
 			cacheStoreMock:     &cachestore.CacheStoreMock{},
 			payload:            []byte(`"a=b"`),
@@ -35,7 +36,7 @@ func TestPostCustomerHandler(t *testing.T) {
 			expectedBody:       `{"error":"Invalid request payload"}`,
 		},
 		{
-			description:        "missing argument 'city'",
+			description:        "then return error when missing an argument",
 			repositoryMock:     &repository.RepositoryMock{},
 			cacheStoreMock:     &cachestore.CacheStoreMock{},
 			payload:            []byte(`{"name":"Fernanda Lima","country":"Limeira"}`),
@@ -43,12 +44,20 @@ func TestPostCustomerHandler(t *testing.T) {
 			expectedBody:       `{"error":"Invalid value 'city'"}`,
 		},
 		{
-			description:        "succesfull",
-			repositoryMock:     mockCreateCustomer(),
+			description:        "then return succesfull",
+			repositoryMock:     mockCreateCustomerSuccesfull(),
 			cacheStoreMock:     &cachestore.CacheStoreMock{},
 			payload:            []byte(`{"name":"Fernanda Lima","city":"Limeira"}`),
 			expectedStatusCode: 200,
 			expectedBody:       `{"id":".*","name":"Fernanda Lima","city":"Limeira"}`,
+		},
+		{
+			description:        "then return error",
+			repositoryMock:     mockCreateCustomerError(),
+			cacheStoreMock:     &cachestore.CacheStoreMock{},
+			payload:            []byte(`{"name":"Fernanda Lima","city":"Limeira"}`),
+			expectedStatusCode: 500,
+			expectedBody:       `{"error":"could not complete customer registration"}`,
 		},
 	}
 
@@ -70,8 +79,14 @@ func TestPostCustomerHandler(t *testing.T) {
 	}
 }
 
-func mockCreateCustomer() *repository.RepositoryMock {
+func mockCreateCustomerSuccesfull() *repository.RepositoryMock {
 	repository := &repository.RepositoryMock{}
 	repository.On("InsertCustomer", mock.Anything).Return(nil)
+	return repository
+}
+
+func mockCreateCustomerError() *repository.RepositoryMock {
+	repository := &repository.RepositoryMock{}
+	repository.On("InsertCustomer", mock.Anything).Return(errors.New("mock error"))
 	return repository
 }
