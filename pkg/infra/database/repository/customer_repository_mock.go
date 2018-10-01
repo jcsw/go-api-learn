@@ -5,11 +5,13 @@ import (
 	"github.com/stretchr/testify/mock"
 )
 
-type RepositoryMock struct {
+// CustomerRepositoryMock mock to CustomerRepository
+type CustomerRepositoryMock struct {
 	mock.Mock
 }
 
-func (m *RepositoryMock) InsertCustomer(newCustomerEntity *CustomerEntity) error {
+// InsertCustomer mock to InsertCustomer
+func (m *CustomerRepositoryMock) InsertCustomer(newCustomerEntity *CustomerEntity) error {
 	args := m.Called(newCustomerEntity)
 
 	if args.Error(0) == nil {
@@ -19,7 +21,8 @@ func (m *RepositoryMock) InsertCustomer(newCustomerEntity *CustomerEntity) error
 	return args.Error(0)
 }
 
-func (m *RepositoryMock) FindCustomerByName(name string) (*CustomerEntity, error) {
+// FindCustomerByName mock to FindCustomerByName
+func (m *CustomerRepositoryMock) FindCustomerByName(name string) (*CustomerEntity, error) {
 	args := m.Called(name)
 
 	if args.Error(1) != nil {
@@ -33,7 +36,8 @@ func (m *RepositoryMock) FindCustomerByName(name string) (*CustomerEntity, error
 	return args.Get(0).(*CustomerEntity), nil
 }
 
-func (m *RepositoryMock) FindAllCustomers() ([]*CustomerEntity, error) {
+//FindAllCustomers mock to FindAllCustomers
+func (m *CustomerRepositoryMock) FindAllCustomers() ([]*CustomerEntity, error) {
 	args := m.Called()
 
 	if args.Error(1) != nil {

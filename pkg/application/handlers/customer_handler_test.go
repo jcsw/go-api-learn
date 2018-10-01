@@ -21,24 +21,24 @@ func TestPostCustomerHandler(t *testing.T) {
 
 	tests := []struct {
 		description        string
-		repositoryMock     *repository.RepositoryMock
-		cacheStoreMock     *cachestore.CacheStoreMock
+		repositoryMock     *repository.CustomerRepositoryMock
+		cacheStoreMock     *cachestore.CustomerCacheStoreMock
 		payload            []byte
 		expectedStatusCode int
 		expectedBody       string
 	}{
 		{
 			description:        "then return error when body is not valid",
-			repositoryMock:     &repository.RepositoryMock{},
-			cacheStoreMock:     &cachestore.CacheStoreMock{},
+			repositoryMock:     &repository.CustomerRepositoryMock{},
+			cacheStoreMock:     &cachestore.CustomerCacheStoreMock{},
 			payload:            []byte(`"a=b"`),
 			expectedStatusCode: 400,
 			expectedBody:       `{"error":"Invalid request payload"}`,
 		},
 		{
 			description:        "then return error when missing an argument",
-			repositoryMock:     &repository.RepositoryMock{},
-			cacheStoreMock:     &cachestore.CacheStoreMock{},
+			repositoryMock:     &repository.CustomerRepositoryMock{},
+			cacheStoreMock:     &cachestore.CustomerCacheStoreMock{},
 			payload:            []byte(`{"name":"Fernanda Lima","country":"Limeira"}`),
 			expectedStatusCode: 400,
 			expectedBody:       `{"error":"Invalid value 'city'"}`,
@@ -46,7 +46,7 @@ func TestPostCustomerHandler(t *testing.T) {
 		{
 			description:        "then return succesfull",
 			repositoryMock:     mockCreateCustomerSuccesfull(),
-			cacheStoreMock:     &cachestore.CacheStoreMock{},
+			cacheStoreMock:     &cachestore.CustomerCacheStoreMock{},
 			payload:            []byte(`{"name":"Fernanda Lima","city":"Limeira"}`),
 			expectedStatusCode: 200,
 			expectedBody:       `{"id":".*","name":"Fernanda Lima","city":"Limeira"}`,
@@ -54,7 +54,7 @@ func TestPostCustomerHandler(t *testing.T) {
 		{
 			description:        "then return error",
 			repositoryMock:     mockCreateCustomerError(),
-			cacheStoreMock:     &cachestore.CacheStoreMock{},
+			cacheStoreMock:     &cachestore.CustomerCacheStoreMock{},
 			payload:            []byte(`{"name":"Fernanda Lima","city":"Limeira"}`),
 			expectedStatusCode: 500,
 			expectedBody:       `{"error":"could not complete customer registration"}`,
@@ -79,14 +79,14 @@ func TestPostCustomerHandler(t *testing.T) {
 	}
 }
 
-func mockCreateCustomerSuccesfull() *repository.RepositoryMock {
-	repository := &repository.RepositoryMock{}
+func mockCreateCustomerSuccesfull() *repository.CustomerRepositoryMock {
+	repository := &repository.CustomerRepositoryMock{}
 	repository.On("InsertCustomer", mock.Anything).Return(nil)
 	return repository
 }
 
-func mockCreateCustomerError() *repository.RepositoryMock {
-	repository := &repository.RepositoryMock{}
+func mockCreateCustomerError() *repository.CustomerRepositoryMock {
+	repository := &repository.CustomerRepositoryMock{}
 	repository.On("InsertCustomer", mock.Anything).Return(errors.New("mock error"))
 	return repository
 }

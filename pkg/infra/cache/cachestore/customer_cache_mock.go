@@ -5,11 +5,13 @@ import (
 	"github.com/stretchr/testify/mock"
 )
 
-type CacheStoreMock struct {
+// CustomerCacheStoreMock mock to CustomerCacheStore
+type CustomerCacheStoreMock struct {
 	mock.Mock
 }
 
-func (m *CacheStoreMock) RetriveCustomerEntity(customerName string) *repository.CustomerEntity {
+// RetriveCustomerEntity mock to RetriveCustomerEntity
+func (m *CustomerCacheStoreMock) RetriveCustomerEntity(customerName string) *repository.CustomerEntity {
 	args := m.Called(customerName)
 
 	if args.Get(0) == nil {
@@ -19,6 +21,7 @@ func (m *CacheStoreMock) RetriveCustomerEntity(customerName string) *repository.
 	return args.Get(0).(*repository.CustomerEntity)
 }
 
-func (m *CacheStoreMock) PersistCustomerEntity(customerEntity *repository.CustomerEntity) {
+// PersistCustomerEntity mock to PersistCustomerEntity
+func (m *CustomerCacheStoreMock) PersistCustomerEntity(customerEntity *repository.CustomerEntity) {
 	m.Called(customerEntity)
 }
