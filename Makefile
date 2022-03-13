@@ -1,6 +1,5 @@
 # Go parameters
 GO_CMD=go
-DEP_CMD=dep
 GO_GET=$(GO_CMD) get
 GO_RUN=$(GO_CMD) run
 GO_BUILD=$(GO_CMD) build
@@ -42,8 +41,7 @@ run:
 	$(GO_RUN) $(APP_INIT) -env=dev
 deps:
 	$(GO_GET) golang.org/x/tools/cmd/cover
-	$(GO_GET) github.com/golang/lint/golint
-	$(DEP_CMD) ensure
+	$(GO_GET) golang.org/x/lint
 
 build-linux:
 	CGO_ENABLED=0 GOOS=linux GOARCH=amd64 $(GO_BUILD) -o $(BUILD_DIRECTORY)/$(BINARY_UNIX) -v $(APP_INIT)
